@@ -1,8 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from rest_framework import status, viewsets
-from rest_framework.decorators import action
+from rest_framework import status, viewsets, mixins, generics
 
 from .models import JobModel, ApplicationModel
 from .serializers import ApplicationSerializer, JobSerializer
@@ -41,4 +40,25 @@ class ApplyJobView(APIView):
 class JobModelViewSet(viewsets.ModelViewSet):
     queryset = JobModel.objects.all()
     serializer_class = JobSerializer
-   
+
+class ApplicationCreateReadView(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    generics.GenericAPIView
+):
+    queryset = ApplicationModel.objects.all()
+    serializer_class = ApplicationSerializer
+    # permission_classes = [IsAuthenticatedOrReadOnly]
+    lookup_field = "pk"
+
+    def get(self, request, pk=None, *args, **kwargs):
+        if pk is not None:
+            return self.retrieve(request, pk=pk, *args, **kwargs)
+        return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+

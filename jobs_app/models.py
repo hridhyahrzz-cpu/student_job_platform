@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from users_app.models import UserModel
 
 class JobModel(models.Model):
     title = models.CharField(max_length=255)
@@ -9,7 +10,7 @@ class JobModel(models.Model):
     location = models.CharField(max_length=255)
     salary = models.IntegerField()
 
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(UserModel, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -23,7 +24,7 @@ class ApplicationModel(models.Model):
     ]
 
     job = models.ForeignKey(JobModel, on_delete=models.CASCADE)
-    applicant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    applicant = models.ForeignKey(UserModel, on_delete=models.SET_NULL, null=True, blank=True)
 
     cover_letter = models.TextField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
@@ -31,4 +32,5 @@ class ApplicationModel(models.Model):
     applied_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.applicant.username} - {self.job.title}"
+        applicant_name = self.applicant.username if self.applicant else "Anonymous"
+        return f"{applicant_name} - {self.job.title}"
