@@ -14,3 +14,11 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
             user_type="student"
         )
         return user
+
+
+class StudentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = UserModel
+        fields = ["id", "username", "user_type"]
+        read_only_fields = ["id", "user_type"]
