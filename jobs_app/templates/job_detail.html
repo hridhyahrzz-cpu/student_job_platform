@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ job.title }}</title>
+</head>
+<body>
+
+<nav>
+    <a href="/">Home</a> |
+    <a href="/jobs/">Jobs</a>
+</nav>
+
+<hr>
+
+    <h1>{{ job.title }}</h1>
+
+    <p>{{ job.description }}</p>
+
+    <br>
+
+    <a href="/job/{{ job.id }}/apply/">
+        Apply for this Job
+    </a>
+
+    <br><br>
+
+    <a href="/jobs/">Back to Jobs</a>
+
+</body>
+</html>

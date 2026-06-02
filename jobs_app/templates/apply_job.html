@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Apply Job</title>
+</head>
+<body>
+
+    <h1>Apply for {{ job.title }}</h1>
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        <label>Name:</label>
+        <br>
+        <input type="text" name="name" required>
+        <br><br>
+
+        <label>Email:</label>
+        <br>
+        <input type="email" name="email" required>
+        <br><br>
+
+        <label>Skills:</label>
+        <br>
+        <textarea name="skills" rows="5" cols="40"></textarea>
+        <br><br>
+
+        <button type="submit">
+            Submit Application
+        </button>
+
+    </form>
+
+    <br>
+
+    <a href="/jobs/">Back to Jobs</a>
+
+</body>
+</html>
