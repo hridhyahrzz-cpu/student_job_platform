@@ -1,7 +1,8 @@
-from rest_framework.authentication import BaseAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from .models import UserModel
 
-class CustomAuthentication(BaseAuthentication):
 
+class CustomAuthentication(JWTAuthentication):
     def authenticate(self, request):
 
         user = request.user

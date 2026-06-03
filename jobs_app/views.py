@@ -3,9 +3,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework import status, viewsets, mixins, generics
 
+from users_app.permissions import IsStudentOrRecruiter
+
 from .models import JobModel, ApplicationModel
 from .serializers import ApplicationSerializer, JobSerializer
-from .permission import IsOwnerOrReadOnly
+from .permission import IsOwnerOrReadOnly, IsRecruiter
+from users_app.authentication import CustomAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class ApplyJobView(APIView):
@@ -40,6 +44,12 @@ class ApplyJobView(APIView):
 class JobModelViewSet(viewsets.ModelViewSet):
     queryset = JobModel.objects.all()
     serializer_class = JobSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsRecruiter]
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            self.permission_classes = [IsStudentOrRecruiter]
+        return super().get_permissions()
 
 class ApplicationCreateReadView(
     mixins.CreateModelMixin,
@@ -49,7 +59,7 @@ class ApplicationCreateReadView(
 ):
     queryset = ApplicationModel.objects.all()
     serializer_class = ApplicationSerializer
-    # permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     lookup_field = "pk"
 
     def get(self, request, pk=None, *args, **kwargs):
@@ -59,6 +69,9 @@ class ApplicationCreateReadView(
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        serializer.save(applicant=self.request.user)
 
 
 

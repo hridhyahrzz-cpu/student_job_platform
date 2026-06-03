@@ -9,7 +9,7 @@ class IsStudent(BasePermission):
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and
-            request.user.user_type == "student"
+            request.user.usermodel.user_type == "student"
         )
 
 
@@ -21,7 +21,7 @@ class IsRecruiter(BasePermission):
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and
-            request.user.user_type == "recruiter"
+            request.user.usermodel.user_type == "recruiter"
         )
 
 
@@ -33,5 +33,5 @@ class IsStudentOrRecruiter(BasePermission):
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and
-            request.user.user_type in ["student", "recruiter"]
+            request.user.usermodel.user_type in ["student", "recruiter"]
         )

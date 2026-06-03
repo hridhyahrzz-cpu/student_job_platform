@@ -1,6 +1,4 @@
 from django.db import models
-from django.conf import settings
-from users_app.models import UserModel
 
 class JobModel(models.Model):
     title = models.CharField(max_length=255)
@@ -10,7 +8,7 @@ class JobModel(models.Model):
     location = models.CharField(max_length=255)
     salary = models.IntegerField()
 
-    created_by = models.ForeignKey(UserModel, on_delete=models.CASCADE)
+    created_by = models.ForeignKey('users_app.UserModel', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -24,7 +22,7 @@ class ApplicationModel(models.Model):
     ]
 
     job = models.ForeignKey(JobModel, on_delete=models.CASCADE)
-    applicant = models.ForeignKey(UserModel, on_delete=models.SET_NULL, null=True, blank=True)
+    applicant = models.ForeignKey('users_app.UserModel', on_delete=models.CASCADE)
 
     cover_letter = models.TextField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
