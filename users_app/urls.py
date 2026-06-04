@@ -14,8 +14,11 @@ urlpatterns = [
     path("register-page/", register_page, name="register-page"),
     path("students/", StudentListRetrieveView.as_view(), name="student-list"),
     path("students/<int:pk>/", StudentListRetrieveView.as_view(), name="student-detail"),
-    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('login-page/', login_page, name='login-page'),
-    path('dashboard/', dashboard_page, name='dashboard'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path("login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("login-page/", login_page, name="login-page"),
+    path("dashboard/", dashboard_page, name="dashboard"),
+
+    path("profile/", profile_page, name="profile"),
+
+    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ]
