@@ -1,0 +1,32 @@
+{% extends 'jobs_app/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Dashboard</h2>
+                <p>You are logged in successfully.</p>
+                <p>Use the navigation or visit the jobs list to continue.</p>
+                <div class="mb-3">
+                    <a class="btn btn-primary" href="/jobs/">View Jobs</a>
+                    <button id="logout-btn" class="btn btn-secondary">Logout</button>
+                </div>
+                <div id="dashboard-message"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const logoutBtn = document.getElementById('logout-btn');
+const messageBox = document.getElementById('dashboard-message');
+
+logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    messageBox.innerHTML = `<div class="alert alert-success">Logged out. Redirecting to login…</div>`;
+    setTimeout(() => window.location.href = '/login-page/', 700);
+});
+</script>
+{% endblock %}

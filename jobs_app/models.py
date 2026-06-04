@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 class JobModel(models.Model):
@@ -22,7 +23,7 @@ class ApplicationModel(models.Model):
     ]
 
     job = models.ForeignKey(JobModel, on_delete=models.CASCADE)
-    applicant = models.ForeignKey('users_app.UserModel', on_delete=models.CASCADE)
+    applicant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     cover_letter = models.TextField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')

@@ -1,0 +1,72 @@
+{% extends 'jobs_app/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Login</h2>
+                <div id="message"></div>
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                    <a class="btn btn-link" href="/register-page/">Register instead</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const accessToken = localStorage.getItem('access_token');
+
+if (accessToken) {
+    window.location.href = '/dashboard/';
+}
+
+const form = document.getElementById('login-form');
+const messageBox = document.getElementById('message');
+
+form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    messageBox.innerHTML = '';
+
+    const payload = {
+        username: form.username.value.trim(),
+        password: form.password.value,
+    };
+
+    try {
+        const response = await fetch('/login/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            const errorMessage = data.detail || JSON.stringify(data);
+            messageBox.innerHTML = `<div class="alert alert-danger">${errorMessage}</div>`;
+            return;
+        }
+
+        localStorage.setItem('access_token', data.access);
+        localStorage.setItem('refresh_token', data.refresh);
+        messageBox.innerHTML = `<div class="alert alert-success">Logged in successfully. Redirecting…</div>`;
+        setTimeout(() => window.location.href = '/dashboard/', 900);
+    } catch (error) {
+        messageBox.innerHTML = `<div class="alert alert-danger">Network error: ${error.message}</div>`;
+    }
+});
+</script>
+{% endblock %}

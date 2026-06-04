@@ -1,9 +1,54 @@
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from rest_framework import mixins, generics, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .models import UserModel
+from .forms import ProfileForm
+from .models import UserModel, Profile
 from .serializers import StudentRegisterSerializer, StudentSerializer
+
+
+def login_page(request):
+    return render(request, "users_app/login.html")
+
+
+def register_page(request):
+    return render(request, "users_app/register.html")
+
+
+def dashboard_page(request):
+    return render(request, "users_app/dashboard.html")
+
+
+@login_required(login_url='/login-page/')
+def profile_page(request):
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            profile = form.save(commit=False)
+            profile.user = request.user
+            profile.save()
+            success_message = 'Profile updated successfully.'
+            return render(request, 'users_app/profile.html', {
+                'form': form,
+                'profile': profile,
+                'success_message': success_message,
+            })
+        error_message = 'Please fix the errors below.'
+        return render(request, 'users_app/profile.html', {
+            'form': form,
+            'profile': profile,
+            'error_message': error_message,
+        })
+
+    form = ProfileForm(instance=profile)
+    return render(request, 'users_app/profile.html', {
+        'form': form,
+        'profile': profile,
+    })
 
 
 @api_view(["POST"])

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import JobModel, ApplicationModel
+from users_app.serializers import StudentSerializer
 
 
 class JobSerializer(serializers.ModelSerializer):
@@ -14,6 +15,8 @@ class JobSerializer(serializers.ModelSerializer):
 
 
 class ApplicationSerializer(serializers.ModelSerializer):
+    applicant = StudentSerializer(read_only=True)
+
     class Meta:
         model = ApplicationModel
         fields = ['id', 'job', 'cover_letter', 'applicant']

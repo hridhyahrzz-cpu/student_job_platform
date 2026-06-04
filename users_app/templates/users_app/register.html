@@ -1,0 +1,75 @@
+{% extends 'jobs_app/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Register</h2>
+                <div id="message"></div>
+                <form id="register-form">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Register</button>
+                    <a class="btn btn-link" href="/login-page/">Already have an account?</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const form = document.getElementById('register-form');
+const messageBox = document.getElementById('message');
+
+form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    messageBox.innerHTML = '';
+
+    const password = form.password.value;
+    const confirmPassword = form.confirm_password.value;
+
+    if (password !== confirmPassword) {
+        messageBox.innerHTML = `<div class="alert alert-warning">Passwords do not match.</div>`;
+        return;
+    }
+
+    const payload = {
+        username: form.username.value.trim(),
+        password: password,
+    };
+
+    try {
+        const response = await fetch('/register/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            messageBox.innerHTML = `<div class="alert alert-danger">${JSON.stringify(data)}</div>`;
+            return;
+        }
+
+        messageBox.innerHTML = `<div class="alert alert-success">Registration successful! Redirecting to login…</div>`;
+        setTimeout(() => window.location.href = '/login-page/', 1200);
+    } catch (error) {
+        messageBox.innerHTML = `<div class="alert alert-danger">Network error: ${error.message}</div>`;
+    }
+});
+</script>
+{% endblock %}
