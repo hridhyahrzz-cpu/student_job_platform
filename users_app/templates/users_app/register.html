@@ -1,27 +1,45 @@
 {% extends 'jobs_app/base.html' %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
+<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-md-5">
+        <div class="card shadow-lg border-0 p-4">
             <div class="card-body">
-                <h2 class="card-title mb-4">Register</h2>
-                <div id="message"></div>
-                <form id="register-form">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold mb-2">Create Account</h2>
+                    <p class="text-secondary small">Register to start applying for jobs and building your profile</p>
+                </div>
+                
+                <div id="message" class="mb-3"></div>
+                
+                <form id="register-form" autocomplete="off">
+                    {% csrf_token %}
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Choose a username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="user_type" class="form-label">Role</label>
+                        <select class="form-select" id="user_type" name="user_type" required>
+                            <option value="student" selected>Student</option>
+                            <option value="recruiter">Recruiter</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="confirm_password" class="form-label">Confirm Password</label>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="••••••••" required>
                     </div>
-                    <button type="submit" class="btn btn-success">Register</button>
-                    <a class="btn btn-link" href="/login-page/">Already have an account?</a>
+                    
+                    <button type="submit" class="btn btn-success w-100 py-2 mb-3">Sign Up</button>
+                    
+                    <div class="text-center">
+                        <span class="text-secondary small">Already have an account?</span>
+                        <a class="small ms-1 fw-semibold text-decoration-none" href="/login-page/">Sign In</a>
+                    </div>
                 </form>
             </div>
         </div>
@@ -29,6 +47,11 @@
 </div>
 
 <script>
+// If already logged in, redirect to dashboard immediately
+if (localStorage.getItem('access_token')) {
+    window.location.href = '/dashboard/';
+}
+
 const form = document.getElementById('register-form');
 const messageBox = document.getElementById('message');
 
@@ -40,20 +63,31 @@ form.addEventListener('submit', async (event) => {
     const confirmPassword = form.confirm_password.value;
 
     if (password !== confirmPassword) {
-        messageBox.innerHTML = `<div class="alert alert-warning">Passwords do not match.</div>`;
+        messageBox.innerHTML = `<div class="alert alert-warning">Passwords do not match. Please verify your password.</div>`;
         return;
     }
+
+    // Add loading indicator
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Creating account...';
 
     const payload = {
         username: form.username.value.trim(),
         password: password,
+        user_type: form.user_type.value,
     };
+
+    // Obtain CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
     try {
         const response = await fetch('/register/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
             },
             body: JSON.stringify(payload),
         });
@@ -62,13 +96,17 @@ form.addEventListener('submit', async (event) => {
 
         if (!response.ok) {
             messageBox.innerHTML = `<div class="alert alert-danger">${JSON.stringify(data)}</div>`;
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
             return;
         }
 
-        messageBox.innerHTML = `<div class="alert alert-success">Registration successful! Redirecting to login…</div>`;
+        messageBox.innerHTML = `<div class="alert alert-success">Registration successful! Redirecting to login page…</div>`;
         setTimeout(() => window.location.href = '/login-page/', 1200);
     } catch (error) {
         messageBox.innerHTML = `<div class="alert alert-danger">Network error: ${error.message}</div>`;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
     }
 });
 </script>

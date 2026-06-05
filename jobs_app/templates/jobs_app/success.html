@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Success</title>
+    <title>Application Status</title>
 </head>
 <body>
 
-<h1>Application Submitted 🎉</h1>
+    <h1>{{ message }}</h1>
 
-{% if score %}
-    <h2>AI Match Score: {{ score }}%</h2>
-{% endif %}
+    <p>Job: {{ job.title }}</p>
 
-<a href="/jobs/">Back to Jobs</a>
+    <a href="/jobs/">Back to Jobs</a>
 
 </body>
 </html>

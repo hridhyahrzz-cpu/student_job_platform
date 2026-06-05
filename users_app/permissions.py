@@ -7,10 +7,14 @@ class IsStudent(BasePermission):
     """
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            request.user.usermodel.user_type == "student"
-        )
+        if not request.user or not request.user.is_authenticated:
+            return False
+        try:
+            return request.user.usermodel.user_type == "student"
+        except AttributeError:
+            return getattr(request.user, "user_type", None) == "student"
+        except Exception:
+            return False
 
 
 class IsRecruiter(BasePermission):
@@ -19,19 +23,27 @@ class IsRecruiter(BasePermission):
     """
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            request.user.usermodel.user_type == "recruiter"
-        )
+        if not request.user or not request.user.is_authenticated:
+            return False
+        try:
+            return request.user.usermodel.user_type == "recruiter"
+        except AttributeError:
+            return getattr(request.user, "user_type", None) == "recruiter"
+        except Exception:
+            return False
 
 
 class IsStudentOrRecruiter(BasePermission):
     """
-    Allows access to both student and recruiter (if needed)
+    Allows access to both student and recruiter
     """
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            request.user.usermodel.user_type in ["student", "recruiter"]
-        )
+        if not request.user or not request.user.is_authenticated:
+            return False
+        try:
+            return request.user.usermodel.user_type in ["student", "recruiter"]
+        except AttributeError:
+            return getattr(request.user, "user_type", None) in ["student", "recruiter"]
+        except Exception:
+            return False

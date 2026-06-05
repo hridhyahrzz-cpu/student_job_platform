@@ -11,9 +11,16 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import environ
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Initialize environment variables
+env = environ.Env()
+# Read the .env file from the root directory
+environ.Env.read_env(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -43,6 +50,7 @@ INSTALLED_APPS = [
     'users_app',
     'jobs_app',
 ]
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'users_app.authentication.CustomAuthentication',
@@ -134,3 +142,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/login-page/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Load the Gemini key dynamically from your .env file
+GEMINI_API_KEY = env("GEMINI_API_KEY")
+# Tell the system where to look for your service account json
+# Double-check that this block is at the very end of settings.py and saved!
+if env('GOOGLE_APPLICATION_CREDENTIALS', default=None):
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.path.join(BASE_DIR, env('GOOGLE_APPLICATION_CREDENTIALS'))

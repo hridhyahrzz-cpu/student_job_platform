@@ -1,23 +1,72 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ job.title }}</title>
-</head>
-<body>
+{% extends 'jobs_app/base.html' %}
 
-    <h1>{{ job.title }}</h1>
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-lg p-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4 border-bottom border-secondary border-opacity-10 pb-4">
+                    <div>
+                        <h2 class="fw-bold mb-2">{{ job.title }}</h2>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary bg-opacity-10 text-white border border-secondary border-opacity-25 px-2 py-1 rounded">{{ job.company_name }}</span>
+                            <span class="text-secondary small">📍 {{ job.location }}</span>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <span class="text-secondary small d-block">Eligibility Score</span>
+                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 mt-1 px-3 py-2 rounded-pill">Score: {{ job.minimum_score }}+</span>
+                    </div>
+                </div>
 
-    <p>{{ job.description }}</p>
+                <div class="mb-4">
+                    <h4 class="fw-bold mb-3">Job Description</h4>
+                    <p class="text-secondary" style="line-height: 1.7; white-space: pre-line;">{{ job.description }}</p>
+                </div>
 
-    <br>
+                <div class="row g-3 mb-4 p-3 border border-secondary border-opacity-10 rounded-3 bg-white bg-opacity-5">
+                    <div class="col-6">
+                        <span class="text-secondary small d-block">Compensation</span>
+                        <span class="fw-semibold text-white fs-5">💰 {{ job.salary }}</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-secondary small d-block">Minimum Requirements</span>
+                        <span class="fw-semibold text-white fs-5">📋 Profile Score >= {{ job.minimum_score }}</span>
+                    </div>
+                </div>
 
-    <a href="/job/{{ job.id }}/apply/">
-        Apply for this Job
-    </a>
+                {% if is_creator %}
+                <div class="mt-5 border-top border-secondary border-opacity-10 pt-4">
+                    <h4 class="fw-bold mb-4">🏆 Ranked Applicants</h4>
+                    <div class="d-flex flex-column gap-3">
+                        {% for app in applications %}
+                            <div class="p-3 border border-secondary border-opacity-10 rounded bg-white bg-opacity-5 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <h6 class="fw-bold text-white mb-1">
+                                        <span class="badge bg-primary me-2">#{{ app.rank }}</span>
+                                        👤 {{ app.applicant.username }}
+                                    </h6>
+                                    <p class="text-secondary small mb-0 mt-1">Cover letter: "{{ app.cover_letter }}"</p>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 py-1 px-2 rounded-pill small">
+                                        Score: {{ app.score_val }}
+                                    </span>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="text-secondary small">No applications received yet for this job.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
 
-    <br><br>
-
-    <a href="/jobs/">Back to Jobs</a>
-
-</body>
-</html>
+                <div class="d-flex justify-content-between align-items-center border-top border-secondary border-opacity-10 pt-4 mt-4">
+                    <a href="/jobs/" class="btn btn-secondary">← Back to Jobs</a>
+                    <a href="/jobs/{{ job.id }}/apply/" class="btn btn-success px-4 py-2">Apply for this Job</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

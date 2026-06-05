@@ -16,8 +16,9 @@ class JobSerializer(serializers.ModelSerializer):
 
 class ApplicationSerializer(serializers.ModelSerializer):
     applicant = StudentSerializer(read_only=True)
+    rank = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = ApplicationModel
-        fields = ['id', 'job', 'cover_letter', 'applicant']
-        read_only_fields = ['applicant']
+        fields = ['id', 'job', 'cover_letter', 'applicant', 'rank']
+        read_only_fields = ['applicant', 'rank']

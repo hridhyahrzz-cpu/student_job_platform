@@ -1,36 +1,40 @@
 {% extends 'jobs_app/base.html' %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
+<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-md-5">
+        <div class="card shadow-lg border-0 p-4">
             <div class="card-body">
-                <h2 class="card-title mb-4">Login</h2>
-                <div id="message"></div>
-                <form id="login-form">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold mb-2">Welcome Back</h2>
+                    <p class="text-secondary small">Enter your credentials to access your job platform dashboard</p>
+                </div>
+                
+                <div id="message" class="mb-3"></div>
+                
+                <form id="login-form" autocomplete="off">
+                    {% csrf_token %}
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required>
                     </div>
-                    <button type="submit" class="btn btn-primary">Login</button>
-                    <a class="btn btn-link" href="/register-page/">Register instead</a>
+                    
+                    <button type="submit" class="btn btn-primary w-100 py-2 mb-3">Sign In</button>
+                    
+                    <div class="text-center">
+                        <span class="text-secondary small">New to JobPortal?</span>
+                        <a class="small ms-1 fw-semibold text-decoration-none" href="/register-page/">Create an account</a>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
 <script>
-const accessToken = localStorage.getItem('access_token');
-
-if (accessToken) {
-    window.location.href = '/dashboard/';
-}
-
 const form = document.getElementById('login-form');
 const messageBox = document.getElementById('message');
 
@@ -38,16 +42,26 @@ form.addEventListener('submit', async (event) => {
     event.preventDefault();
     messageBox.innerHTML = '';
 
+    // Add loading indicator
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Signing in...';
+
     const payload = {
         username: form.username.value.trim(),
         password: form.password.value,
     };
+
+    // Obtain CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
     try {
         const response = await fetch('/login/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
             },
             body: JSON.stringify(payload),
         });
@@ -57,15 +71,21 @@ form.addEventListener('submit', async (event) => {
         if (!response.ok) {
             const errorMessage = data.detail || JSON.stringify(data);
             messageBox.innerHTML = `<div class="alert alert-danger">${errorMessage}</div>`;
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
             return;
         }
 
+        // Store tokens
         localStorage.setItem('access_token', data.access);
         localStorage.setItem('refresh_token', data.refresh);
-        messageBox.innerHTML = `<div class="alert alert-success">Logged in successfully. Redirecting…</div>`;
-        setTimeout(() => window.location.href = '/dashboard/', 900);
+
+        messageBox.innerHTML = `<div class="alert alert-success">Successfully logged in! Redirecting…</div>`;
+        setTimeout(() => window.location.href = '/dashboard/', 800);
     } catch (error) {
         messageBox.innerHTML = `<div class="alert alert-danger">Network error: ${error.message}</div>`;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
     }
 });
 </script>

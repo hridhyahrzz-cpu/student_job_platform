@@ -3,67 +3,87 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
-        <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
-                <h3 class="mb-0">My Profile</h3>
+        <div class="card border-0 shadow-lg">
+            <div class="card-header">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <h3 class="fw-bold mb-1">👤 Profile Settings</h3>
+                        <p class="text-secondary small mb-0">Update your student details, bio, and upload your latest resume</p>
+                    </div>
+                    <div>
+                        <!-- Display profile score badge -->
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill">
+                            Profile Score: {{ profile.score }}
+                        </span>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <form method="post" enctype="multipart/form-data">
+            
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" autocomplete="off" class="d-flex flex-column gap-4">
                     {% csrf_token %}
 
-                    <div class="mb-3">
-                        <label for="id_full_name" class="form-label">Full Name</label>
-                        {{ form.full_name }}
-                        {% if form.full_name.errors %}
-                            <div class="text-danger">{{ form.full_name.errors }}</div>
-                        {% endif %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="id_full_name" class="form-label">Full Name</label>
+                            {{ form.full_name }}
+                            {% if form.full_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.full_name.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_phone_number" class="form-label">Phone Number</label>
+                            {{ form.phone_number }}
+                            {% if form.phone_number.errors %}
+                                <div class="text-danger small mt-1">{{ form.phone_number.errors }}</div>
+                            {% endif %}
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="id_phone_number" class="form-label">Phone Number</label>
-                        {{ form.phone_number }}
-                        {% if form.phone_number.errors %}
-                            <div class="text-danger">{{ form.phone_number.errors }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="id_email" class="form-label">Email</label>
+                    <div>
+                        <label for="id_email" class="form-label">Email Address</label>
                         {{ form.email }}
                         {% if form.email.errors %}
-                            <div class="text-danger">{{ form.email.errors }}</div>
+                            <div class="text-danger small mt-1">{{ form.email.errors }}</div>
                         {% endif %}
                     </div>
 
-                    <div class="mb-3">
-                        <label for="id_bio" class="form-label">Bio</label>
+                    <div>
+                        <label for="id_bio" class="form-label">Biography</label>
                         {{ form.bio }}
                         {% if form.bio.errors %}
-                            <div class="text-danger">{{ form.bio.errors }}</div>
+                            <div class="text-danger small mt-1">{{ form.bio.errors }}</div>
                         {% endif %}
                     </div>
 
-                    <div class="mb-3">
-                        <label for="id_resume" class="form-label">Resume</label>
-                        {{ form.resume }}
-                        {% if form.resume.errors %}
-                            <div class="text-danger">{{ form.resume.errors }}</div>
-                        {% endif %}
-                        {% if profile.resume %}
-                            <div class="mt-2">
-                                Current resume: <a href="{{ profile.resume.url }}" target="_blank">Download</a>
-                            </div>
-                        {% endif %}
+                    <div>
+                        <label for="id_resume" class="form-label">Resume / CV (PDF, DOC, DOCX under 5MB)</label>
+                        <div class="p-3 border border-secondary border-opacity-10 rounded-3 bg-white bg-opacity-5">
+                            <input type="file" name="resume" class="form-control" id="id_resume">
+                            {% if form.resume.errors %}
+                                <div class="text-danger small mt-2">{{ form.resume.errors }}</div>
+                            {% endif %}
+                            
+                            {% if profile.resume %}
+                                <p class="mt-2 text-secondary small">Current Resume: <a href="{{ profile.resume.url }}" target="_blank" class="text-info">{{ profile.resume.name }}</a></p>
+                            {% endif %}
+                        </div>
                     </div>
 
+                    <!-- Messages -->
                     {% if success_message %}
                         <div class="alert alert-success">{{ success_message }}</div>
                     {% endif %}
+                    
                     {% if error_message %}
                         <div class="alert alert-danger">{{ error_message }}</div>
                     {% endif %}
 
-                    <button type="submit" class="btn btn-primary">Save Profile</button>
+                    <div class="border-top border-secondary border-opacity-10 pt-4 d-flex justify-content-between align-items-center">
+                        <a href="/dashboard/" class="btn btn-secondary">Back to Dashboard</a>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
                 </form>
             </div>
         </div>

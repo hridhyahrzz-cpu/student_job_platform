@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 
+
 class JobModel(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
@@ -9,11 +10,18 @@ class JobModel(models.Model):
     location = models.CharField(max_length=255)
     salary = models.IntegerField()
 
-    created_by = models.ForeignKey('users_app.UserModel', on_delete=models.CASCADE)
+    minimum_score = models.IntegerField(default=0)
+
+    created_by = models.ForeignKey(
+        'users_app.UserModel',
+        on_delete=models.CASCADE
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.title
+
 
 class ApplicationModel(models.Model):
     STATUS_CHOICES = [
@@ -23,13 +31,25 @@ class ApplicationModel(models.Model):
     ]
 
     job = models.ForeignKey(JobModel, on_delete=models.CASCADE)
-    applicant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    applicant = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
 
     cover_letter = models.TextField()
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
 
     applied_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ("job", "applicant")
+
     def __str__(self):
-        applicant_name = self.applicant.username if self.applicant else "Anonymous"
+        applicant_name = (
+            self.applicant.username if self.applicant else "Anonymous"
+        )
         return f"{applicant_name} - {self.job.title}"

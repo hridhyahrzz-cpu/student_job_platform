@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Application Failed</title>
+    <style>
+        body {font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f0f4ff, #e0e7ff); display: flex; justify-content: center; align-items: center; height: 100vh; margin:0;}
+        .container {background: rgba(255,255,255,0.9); padding: 2rem 3rem; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); max-width: 500px; text-align: center;}
+        h1 {color: #d32f2f; margin-bottom: 0.5rem;}
+        p {color: #333; margin-bottom: 1.5rem;}
+        a {display: inline-block; padding: 0.6rem 1.2rem; background: #1976d2; color: #fff; border-radius: 6px; text-decoration: none; transition: background 0.3s;}
+        a:hover {background: #1565c0;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Application Not Eligible</h1>
+        <p>{{ error }}</p>
+        <a href="/job/{{ job.id }}/">Back to Job Details</a>
+    </div>
+</body>
+</html>
