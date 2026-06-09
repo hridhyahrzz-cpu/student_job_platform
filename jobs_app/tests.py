@@ -303,3 +303,48 @@ class ApplyJobPageTest(TestCase):
         mock_sleep.assert_any_call(4)
 
 
+class JobCreationTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.recruiter = UserModel.objects.create_user(username="recruiter_test", password="password", user_type="recruiter")
+        self.student = UserModel.objects.create_user(username="student_test", password="password", user_type="student")
+
+    def test_anonymous_user_cannot_access_create_job(self):
+        response = self.client.get("/jobs/create/")
+        self.assertEqual(response.status_code, 302)  # Should redirect to login page
+
+    def test_student_cannot_access_create_job(self):
+        self.client.login(username="student_test", password="password")
+        response = self.client.get("/jobs/create/")
+        self.assertEqual(response.status_code, 403)  # Should return Forbidden
+
+    def test_recruiter_can_access_create_job(self):
+        self.client.login(username="recruiter_test", password="password")
+        response = self.client.get("/jobs/create/")
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "jobs_app/create_job.html")
+
+    def test_recruiter_can_create_job_successfully(self):
+        self.client.login(username="recruiter_test", password="password")
+        initial_count = JobModel.objects.count()
+        response = self.client.post("/jobs/create/", {
+            "title": "Software Architect",
+            "description": "Looking for a software architect with Django experience.",
+            "company_name": "InnovativeTech",
+            "location": "San Francisco, CA",
+            "salary": 150000,
+            "minimum_score": 80
+        })
+        self.assertEqual(response.status_code, 302)  # Should redirect to dashboard
+        self.assertEqual(JobModel.objects.count(), initial_count + 1)
+        
+        job = JobModel.objects.latest("created_at")
+        self.assertEqual(job.title, "Software Architect")
+        self.assertEqual(job.description, "Looking for a software architect with Django experience.")
+        self.assertEqual(job.company_name, "InnovativeTech")
+        self.assertEqual(job.location, "San Francisco, CA")
+        self.assertEqual(job.salary, 150000)
+        self.assertEqual(job.minimum_score, 80)
+        self.assertEqual(job.created_by, self.recruiter)
+
+

@@ -1,0 +1,78 @@
+{% extends 'jobs_app/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-lg">
+            <div class="card-header">
+                <div>
+                    <h3 class="fw-bold mb-1">💼 Post a New Job</h3>
+                    <p class="text-secondary small mb-0">Create a job listing with eligibility requirements and minimum resume match score</p>
+                </div>
+            </div>
+            
+            <div class="card-body p-4">
+                <form method="post" autocomplete="off" class="d-flex flex-column gap-4">
+                    {% csrf_token %}
+
+                    <div>
+                        <label for="id_title" class="form-label">Job Title</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="text-danger small mt-1">{{ form.title.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="id_company_name" class="form-label">Company Name</label>
+                        {{ form.company_name }}
+                        {% if form.company_name.errors %}
+                            <div class="text-danger small mt-1">{{ form.company_name.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="id_location" class="form-label">Location</label>
+                            {{ form.location }}
+                            {% if form.location.errors %}
+                                <div class="text-danger small mt-1">{{ form.location.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_salary" class="form-label">Salary (USD/year)</label>
+                            {{ form.salary }}
+                            {% if form.salary.errors %}
+                                <div class="text-danger small mt-1">{{ form.salary.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="id_minimum_score" class="form-label">Minimum Match Score Required (0 - 100)</label>
+                        {{ form.minimum_score }}
+                        <div class="form-text text-secondary small">Students with resume match scores below this limit will not be allowed to submit applications.</div>
+                        {% if form.minimum_score.errors %}
+                            <div class="text-danger small mt-1">{{ form.minimum_score.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="id_description" class="form-label">Job Description</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger small mt-1">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="border-top border-secondary border-opacity-10 pt-4 d-flex justify-content-between align-items-center">
+                        <a href="/dashboard/" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">Post Job</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -111,3 +111,71 @@ class UpdateApplicationStatusAJAXTest(TestCase):
         )
         
         self.assertEqual(response.status_code, 403)
+
+
+from unittest.mock import patch, MagicMock
+
+class ProfileBackgroundResumeTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = UserModel.objects.create_user(username="student1", password="password", user_type="student")
+        
+    @patch("threading.Thread")
+    def test_profile_save_spawns_thread(self, mock_thread):
+        self.client.login(username="student1", password="password")
+        
+        # Pre-set some old data to verify it gets cleared
+        from users_app.models import Profile
+        profile, _ = Profile.objects.get_or_create(user=self.user)
+        profile.resume_text = "Old resume text"
+        profile.score = 50
+        profile.save()
+        
+        # Prepare mock file
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        resume_file = SimpleUploadedFile("resume.pdf", b"Hello resume text", content_type="application/pdf")
+        
+        response = self.client.post("/profile/", {
+            "full_name": "Student Name",
+            "phone_number": "12345",
+            "email": "student@example.com",
+            "bio": "Some bio",
+            "resume": resume_file
+        })
+        
+        self.assertEqual(response.status_code, 200)
+        
+        # Verify thread was instantiated and started
+        self.assertTrue(mock_thread.called)
+        inst = mock_thread.return_value
+        self.assertTrue(inst.start.called)
+        self.assertEqual(mock_thread.call_args[1]["target"].__name__, "handle_background_resume")
+        
+        # Verify old resume text and score were cleared immediately
+        profile.refresh_from_db()
+        self.assertEqual(profile.resume_text, "")
+        self.assertEqual(profile.score, 0)
+        
+    @patch("jobs_app.services.resume_scoring.analyze_resume")
+    def test_handle_background_resume_worker_runs_successfully(self, mock_analyze):
+        mock_analyze.return_value = '{"score": 85, "feedback": "Excellent resume"}'
+        
+        # Create a profile with a file
+        from users_app.models import Profile
+        profile, _ = Profile.objects.get_or_create(user=self.user)
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        profile.resume = SimpleUploadedFile("resume.txt", b"Extracted raw plain text", content_type="text/plain")
+        profile.save()
+        
+        from users_app.views import handle_background_resume
+        handle_background_resume(profile.id)
+        
+        # Verify database was updated
+        profile.refresh_from_db()
+        self.assertEqual(profile.resume_text, "Extracted raw plain text")
+        self.assertEqual(profile.score, 85)
+        
+        # Verify baseline analyze_resume was triggered
+        self.assertTrue(mock_analyze.called)
+        self.assertIn("Extracted raw plain text", mock_analyze.call_args[0][0])
+

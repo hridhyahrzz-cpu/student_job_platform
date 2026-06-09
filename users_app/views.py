@@ -1,3 +1,9 @@
+import threading
+import os
+import logging
+import PyPDF2
+import docx
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login as django_login, logout as django_logout, authenticate
@@ -136,6 +142,74 @@ def update_application_status(request, application_id):
 
 
 
+def handle_background_resume(profile_id):
+    """Extracts text from uploaded profiles and runs baseline scoring without blocking the main web request."""
+    logger = logging.getLogger(__name__)
+    from django.apps import apps
+    Profile = apps.get_model('users_app', 'Profile')
+    from jobs_app.services.resume_scoring import analyze_resume
+    
+    try:
+        profile = Profile.objects.get(id=profile_id)
+        if not profile.resume or not os.path.exists(profile.resume.path):
+            return
+            
+        file_path = profile.resume.path
+        ext = os.path.splitext(file_path)[1].lower()
+        extracted_text = ""
+        
+        # Parse file based on format extension
+        if ext == '.pdf':
+            with open(file_path, 'rb') as f:
+                reader = PyPDF2.PdfReader(f)
+                extracted_text = "".join([page.extract_text() or "" for page in reader.pages])
+        elif ext in ['.docx', '.doc']:
+            doc = docx.Document(file_path)
+            extracted_text = "\n".join([p.text for p in doc.paragraphs])
+        else:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                extracted_text = f.read()
+                
+        if not extracted_text.strip():
+            return
+            
+        # Update the database profile model with raw extracted text
+        profile.resume_text = extracted_text
+        profile.save(update_fields=['resume_text'])
+        
+        # Trigger an initial baseline analysis so the profile data is pre-cached
+        baseline_prompt = (
+            f"Analyze this resume content:\n{extracted_text}\n\n"
+            "Extract the student's primary technical stack, project history, and assign a comprehensive baseline score out of 100 "
+            "matching this schema:\n"
+            '{"score": <int>, "feedback": "<summary>"}'
+        )
+        
+        # This will utilize your newly implemented 503 exponential retry engine automatically!
+        raw_ai_response = analyze_resume(baseline_prompt, "Baseline Profile Sync")
+        
+        # Parse baseline score and save to profile
+        if raw_ai_response:
+            import json
+            import re
+            clean_json_text = re.sub(r'```json\s*|```', '', raw_ai_response).strip()
+            try:
+                score_data = json.loads(clean_json_text)
+                score = int(score_data.get("score", 0))
+                profile.score = score
+                profile.save(update_fields=['score'])
+            except Exception as json_err:
+                logger.warning(f"Baseline JSON parsing failed ({json_err}). Attempting regex fallback.")
+                match = re.search(r'(?:score|rating|points)[:\s\-]*(\d+)', raw_ai_response, re.IGNORECASE)
+                if match:
+                    score = int(match.group(1))
+                    profile.score = score
+                    profile.save(update_fields=['score'])
+        
+    except Exception as e:
+        logger.error(f"Background thread processing crashed for Profile ID {profile_id}: {str(e)}")
+
+
 @login_required(login_url='/login-page/')
 def profile_page(request):
     profile, _ = Profile.objects.get_or_create(user=request.user)
@@ -146,6 +220,18 @@ def profile_page(request):
             profile = form.save(commit=False)
             profile.user = request.user
             profile.save()
+            
+            if 'resume' in request.FILES:
+                # Clear existing pre-extracted text and score to avoid using stale data
+                profile.resume_text = ""
+                profile.score = 0
+                profile.save(update_fields=['resume_text', 'score'])
+                
+                # Instantiating a daemon thread guarantees it detaches cleanly from the HTTP response loop
+                download_thread = threading.Thread(target=handle_background_resume, args=(profile.id,))
+                download_thread.daemon = True
+                download_thread.start()
+                
             success_message = 'Profile updated successfully.'
             return render(request, 'users_app/profile.html', {
                 'form': form,

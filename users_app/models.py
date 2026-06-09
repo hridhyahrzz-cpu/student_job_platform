@@ -22,6 +22,7 @@ class Profile(models.Model):
     phone_number = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True)
     resume = models.FileField(upload_to='resumes/', blank=True, null=True)
+    resume_text = models.TextField(blank=True)
     bio = models.TextField(blank=True)
 
     score = models.IntegerField(default=0)

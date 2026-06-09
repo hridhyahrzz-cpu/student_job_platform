@@ -5,10 +5,12 @@ from .views import (
     job_list,
     job_detail,
     apply_job_page,
+    create_job_page,
 )
 
 urlpatterns = [
     path("jobs/", job_list, name="job-list"),
+    path("jobs/create/", create_job_page, name="create_job"),
     path("jobs/<int:job_id>/", job_detail, name="job-detail"),
     path("jobs/<int:job_id>/apply/", apply_job_page, name="apply-job-page"),
     path("apply/<int:job_id>/", ApplyJobView.as_view(), name="apply-job"),

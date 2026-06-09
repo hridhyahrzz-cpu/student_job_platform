@@ -47,3 +47,31 @@ class IsStudentOrRecruiter(BasePermission):
             return getattr(request.user, "user_type", None) in ["student", "recruiter"]
         except Exception:
             return False
+
+
+from functools import wraps
+from django.http import HttpResponseForbidden
+
+def recruiter_required(view_func):
+    """
+    Decorator for views that checks that the user is logged in and is a recruiter,
+    redirecting to the log-in page or returning 403 Forbidden.
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user or not request.user.is_authenticated:
+            from django.shortcuts import redirect
+            return redirect('login-page')
+            
+        user = request.user
+        user_type = None
+        if hasattr(user, 'usermodel'):
+            user_type = user.usermodel.user_type
+        elif hasattr(user, 'user_type'):
+            user_type = user.user_type
+            
+        if user_type != 'recruiter':
+            return HttpResponseForbidden("Only recruiters can access this page.")
+            
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view

@@ -7,7 +7,9 @@ from django.db import IntegrityError
 
 from .services.resume_scoring import analyze_resume
 
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+from .forms import JobCreationForm
+from users_app.permissions import recruiter_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from rest_framework.views import APIView
@@ -172,35 +174,36 @@ def apply_job_page(request, job_id):
                 {"job": job, "message": "You have already applied for this job."}
             )
 
-        resume_text = ""
+        resume_text = getattr(profile, 'resume_text', '').strip()
         error_msg = None
 
-        file_name = profile.resume.name.lower()
-        try:
-            # We open the FieldFile stored on profile.resume
-            profile.resume.open("rb")
-            if file_name.endswith(".pdf"):
-                import PyPDF2
-                reader = PyPDF2.PdfReader(profile.resume)
-                text_parts = []
-                for page in reader.pages:
-                    page_text = page.extract_text()
-                    if page_text:
-                        text_parts.append(page_text)
-                resume_text = "\n".join(text_parts).strip()
-            elif file_name.endswith(".docx"):
-                import docx
-                doc = docx.Document(profile.resume)
-                text_parts = []
-                for para in doc.paragraphs:
-                    text_parts.append(para.text)
-                resume_text = "\n".join(text_parts).strip()
-            else:
-                resume_text = profile.resume.read().decode("utf-8", errors="ignore").strip()
-        except Exception as e:
-            error_msg = f"Failed to extract text from your profile resume: {e}"
-        finally:
-            profile.resume.close()
+        if not resume_text:
+            file_name = profile.resume.name.lower()
+            try:
+                # We open the FieldFile stored on profile.resume
+                profile.resume.open("rb")
+                if file_name.endswith(".pdf"):
+                    import PyPDF2
+                    reader = PyPDF2.PdfReader(profile.resume)
+                    text_parts = []
+                    for page in reader.pages:
+                        page_text = page.extract_text()
+                        if page_text:
+                            text_parts.append(page_text)
+                    resume_text = "\n".join(text_parts).strip()
+                elif file_name.endswith(".docx"):
+                    import docx
+                    doc = docx.Document(profile.resume)
+                    text_parts = []
+                    for para in doc.paragraphs:
+                        text_parts.append(para.text)
+                    resume_text = "\n".join(text_parts).strip()
+                else:
+                    resume_text = profile.resume.read().decode("utf-8", errors="ignore").strip()
+            except Exception as e:
+                error_msg = f"Failed to extract text from your profile resume: {e}"
+            finally:
+                profile.resume.close()
 
         if error_msg:
             return render(
@@ -385,3 +388,19 @@ class ApplicationCreateReadView(
     def home_page(request):
         jobs = JobModel.objects.all()
         return render(request, "jobs_app/home.html", {"jobs": jobs})
+
+
+@login_required(login_url='/login-page/')
+@recruiter_required
+def create_job_page(request):
+    if request.method == 'POST':
+        form = JobCreationForm(request.POST)
+        if form.is_valid():
+            job = form.save(commit=False)
+            from users_app.models import UserModel
+            job.created_by = UserModel.objects.get(id=request.user.id)
+            job.save()
+            return redirect('dashboard')
+    else:
+        form = JobCreationForm()
+    return render(request, 'jobs_app/create_job.html', {'form': form})
