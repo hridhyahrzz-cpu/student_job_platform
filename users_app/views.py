@@ -58,36 +58,111 @@ def dashboard_page(request):
     elif hasattr(user, 'user_type'):
         user_type = user.user_type
 
+    from jobs_app.models import NotificationModel
+    unread_notifications = NotificationModel.objects.filter(recipient=user, is_read=False)
+
     if user_type == "recruiter":
-        from jobs_app.models import JobModel, ApplicationModel
-        jobs = JobModel.objects.filter(created_by_id=user.id)
-        from django.db.models import Window, F, Value
+        from jobs_app.models import JobModel, ApplicationModel, QuizAttemptModel
+        from django.db.models import Window, F, Value, Q, Exists, OuterRef
         from django.db.models.functions import RowNumber, Coalesce
-        applications = ApplicationModel.objects.filter(job__in=jobs).select_related('job', 'applicant').annotate(
+        
+        jobs = JobModel.objects.filter(created_by_id=user.id)
+        
+        search_query = request.GET.get('search_query', '').strip()
+        min_cgpa = request.GET.get('min_cgpa', '').strip()
+        min_quiz_score = request.GET.get('min_quiz_score', '').strip()
+        
+        # Base applications query
+        applications_qs = ApplicationModel.objects.filter(job__in=jobs).select_related('job', 'applicant__profile')
+        
+        # 1. Search Query filter (Keywords, skills, names)
+        if search_query:
+            applications_qs = applications_qs.filter(
+                Q(applicant__username__icontains=search_query) |
+                Q(applicant__first_name__icontains=search_query) |
+                Q(applicant__last_name__icontains=search_query) |
+                Q(applicant__profile__full_name__icontains=search_query) |
+                Q(applicant__profile__resume_text__icontains=search_query) |
+                Q(applicant__profile__bio__icontains=search_query)
+            )
+            
+        # Annotate score_val
+        applications_qs = applications_qs.annotate(
             score_val=Coalesce(F('applicant__profile__score'), Value(0))
-        ).annotate(
+        )
+        
+        # 2. Min CGPA (Profile Score) filter
+        if min_cgpa:
+            try:
+                applications_qs = applications_qs.filter(score_val__gte=float(min_cgpa))
+            except (ValueError, TypeError):
+                pass
+                
+        # 3. Min Quiz Score filter (Quiz attempts logs)
+        if min_quiz_score:
+            try:
+                val = float(min_quiz_score)
+                attempts = QuizAttemptModel.objects.filter(student=OuterRef('applicant'), score__gte=val)
+                applications_qs = applications_qs.filter(Exists(attempts))
+            except (ValueError, TypeError):
+                pass
+                
+        # Annotate rank and order by
+        applications = applications_qs.annotate(
             rank=Window(
                 expression=RowNumber(),
                 partition_by=[F('job')],
                 order_by=[F('score_val').desc(), F('applied_at').asc()]
             )
         ).order_by('job', '-score_val', 'applied_at')
+        
         return render(request, "users_app/dashboard_recruiter.html", {
             "jobs": jobs,
-            "applications": applications
+            "applications": applications,
+            "notifications": unread_notifications,
+            "unread_notifications": unread_notifications,
         })
     else:
-        from jobs_app.models import ApplicationModel
-        applications = ApplicationModel.objects.filter(applicant=user).select_related('job')
+        from jobs_app.models import ApplicationModel, InterviewModel, QuizAttemptModel
+        from django.utils import timezone
+        from django.db.models import Max
+        
+        applications = ApplicationModel.objects.filter(applicant=user).select_related('job', 'applicant__profile')
+        upcoming_interviews = InterviewModel.objects.filter(
+            application__applicant=user,
+            scheduled_time__gte=timezone.now()
+        ).select_related('application__job').order_by('scheduled_time')
+        
+        # Calculate highest scores dynamically for charts
+        categories = [
+            ('python', 'Python Syntax'),
+            ('dsa', 'Data Structures'),
+            ('aptitude', 'Quantitative Aptitude')
+        ]
+        chart_labels = []
+        chart_scores = []
+        for cat_code, cat_name in categories:
+            max_score = QuizAttemptModel.objects.filter(
+                student=user,
+                quiz__category=cat_code
+            ).aggregate(Max('score'))['score__max']
+            chart_labels.append(cat_name)
+            chart_scores.append(float(max_score) if max_score is not None else 0.0)
+        
         return render(request, "users_app/dashboard_student.html", {
-            "applications": applications
+            "applications": applications,
+            "upcoming_interviews": upcoming_interviews,
+            "notifications": unread_notifications,
+            "unread_notifications": unread_notifications,
+            "chart_labels": chart_labels,
+            "chart_scores": chart_scores,
         })
 
 
 @login_required(login_url='/login-page/')
 def my_applications_page(request):
     from jobs_app.models import ApplicationModel
-    applications = ApplicationModel.objects.filter(applicant=request.user).select_related('job')
+    applications = ApplicationModel.objects.filter(applicant=request.user).select_related('job', 'applicant__profile')
     return render(request, "users_app/my_applications.html", {"applications": applications})
 
 
@@ -122,9 +197,34 @@ def update_application_status(request, application_id):
         else:
             new_status = request.POST.get("status")
             
-        if new_status in ["accepted", "rejected", "pending"]:
+        if new_status in ["applied", "assessment", "technical", "hr", "offered", "rejected"]:
             application.status = new_status
             application.save()
+
+            # Dispatch Notification
+            from jobs_app.models import NotificationModel
+            status_labels = dict(ApplicationModel.STATUS_CHOICES)
+            status_display = status_labels.get(new_status, new_status)
+            title = f"Application Status Update: {status_display}"
+            
+            if new_status == 'assessment':
+                message = f"You have been moved to the Online Assessment stage for: {application.job.title}. Please check your email for test instructions."
+            elif new_status == 'technical':
+                message = f"Congratulations! You passed the assessment and are now scheduled for a Technical Interview for: {application.job.title}."
+            elif new_status == 'hr':
+                message = f"Great progress! You have advanced to the HR Round for: {application.job.title}."
+            elif new_status == 'offered':
+                message = f"🎉 Amazing news! You have received an Offer for the position: {application.job.title}! Check your email for details."
+            elif new_status == 'rejected':
+                message = f"Thank you for your interest. Unfortunately, your application for the position: {application.job.title} was not selected."
+            else:
+                message = f"Your application status for the position: {application.job.title} has been updated to: {status_display}."
+                
+            NotificationModel.objects.create(
+                recipient=application.applicant,
+                title=title,
+                message=message
+            )
             
             if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == "application/json":
                 from django.http import JsonResponse
@@ -139,6 +239,23 @@ def update_application_status(request, application_id):
         return JsonResponse({"success": False, "error": "POST method required"}, status=405)
         
     return redirect("dashboard")
+
+
+@login_required(login_url='/login-page/')
+def mark_notification_read(request, notification_id):
+    from jobs_app.models import NotificationModel
+    notification = get_object_or_404(NotificationModel, id=notification_id, recipient=request.user)
+    notification.is_read = True
+    notification.save()
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == "application/json":
+        from django.http import JsonResponse
+        return JsonResponse({"success": True})
+        
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return redirect(referer)
+    return redirect('dashboard')
 
 
 

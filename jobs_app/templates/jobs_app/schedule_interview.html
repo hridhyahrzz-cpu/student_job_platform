@@ -1,0 +1,58 @@
+{% extends 'jobs_app/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-lg">
+            <div class="card-header">
+                <div>
+                    <h3 class="fw-bold mb-1">📅 Schedule Interview</h3>
+                    <p class="text-secondary small mb-0">Set up a video meeting round for student <strong>{{ application.applicant.username }}</strong> applying to <strong>{{ application.job.title }}</strong></p>
+                </div>
+            </div>
+            
+            <div class="card-body p-4">
+                <form method="post" autocomplete="off" class="d-flex flex-column gap-4">
+                    {% csrf_token %}
+
+                    <div>
+                        <label for="id_scheduled_time" class="form-label">Interview Date & Time</label>
+                        {{ form.scheduled_time }}
+                        <div class="form-text text-secondary small">Choose the scheduled date and time in your local timezone.</div>
+                        {% if form.scheduled_time.errors %}
+                            <div class="text-danger small mt-1">{{ form.scheduled_time.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="id_meeting_link" class="form-label">Meeting URL (Google Meet, Zoom, etc.)</label>
+                        {{ form.meeting_link }}
+                        {% if form.meeting_link.errors %}
+                            <div class="text-danger small mt-1">{{ form.meeting_link.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="id_notes" class="form-label">Interview Notes & Prep Instructions</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small mt-1">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="border-top border-secondary border-opacity-10 pt-4 d-flex justify-content-between align-items-center">
+                        <a href="/dashboard/" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            {% if interview %}
+                                Reschedule Interview
+                            {% else %}
+                                Schedule Interview
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

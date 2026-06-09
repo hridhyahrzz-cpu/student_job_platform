@@ -11,6 +11,7 @@ from .views import (
     update_application_status,
     profile_page,
     StudentListRetrieveView,
+    mark_notification_read,
 )
 
 urlpatterns = [
@@ -24,6 +25,7 @@ urlpatterns = [
     path("dashboard/", dashboard_page, name="dashboard"),
     path("my-applications/", my_applications_page, name="my-applications"),
     path("applications/<int:application_id>/status/", update_application_status, name="update-application-status"),
+    path("notifications/<int:notification_id>/read/", mark_notification_read, name="mark_notification_read"),
 
     path("profile/", profile_page, name="profile"),
 

@@ -1,0 +1,105 @@
+{% extends 'jobs_app/base.html' %}
+
+{% block title %}JobSnap | Take Assessment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <!-- Quiz Header Card -->
+        <div class="card border-0 mb-4 p-4" style="background: linear-gradient(135deg, rgba(157, 78, 221, 0.08) 0%, rgba(0, 180, 216, 0.08) 100%); border: 1px solid var(--glass-border) !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-1 rounded-pill small">
+                        {{ quiz.get_category_display }}
+                    </span>
+                    <a href="{% url 'quiz_list' %}" class="btn btn-outline-light btn-sm">Exit Test</a>
+                </div>
+                <h2 class="fw-bold text-white mb-0 mt-2">{{ quiz.title }}</h2>
+            </div>
+        </div>
+
+        <!-- Quiz Questions Form -->
+        <form method="POST" action="{% url 'take_quiz' quiz.id %}" id="quiz-form">
+            {% csrf_token %}
+            
+            {% for question in questions %}
+                <div class="card border-0 mb-4 p-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="fw-bold text-white mb-4 d-flex align-items-start gap-2">
+                            <span class="badge bg-secondary bg-opacity-20 text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.9rem;">
+                                {{ forloop.counter }}
+                            </span>
+                            <span style="flex: 1;">{{ question.text }}</span>
+                        </h5>
+                        
+                        <!-- Options List -->
+                        <div class="d-flex flex-column gap-2 mt-3">
+                            <!-- Option A -->
+                            <label class="form-check-label w-100 p-3 mb-2 rounded text-white d-block" 
+                                   style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: all 0.2s;">
+                                <input type="radio" name="question_{{ question.id }}" value="A" required class="form-check-input me-3 align-middle" style="width: 1.2em; height: 1.2em; border-color: rgba(255, 255, 255, 0.35);">
+                                <span class="align-middle">{{ question.option_a }}</span>
+                            </label>
+                            
+                            <!-- Option B -->
+                            <label class="form-check-label w-100 p-3 mb-2 rounded text-white d-block" 
+                                   style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: all 0.2s;">
+                                <input type="radio" name="question_{{ question.id }}" value="B" required class="form-check-input me-3 align-middle" style="width: 1.2em; height: 1.2em; border-color: rgba(255, 255, 255, 0.35);">
+                                <span class="align-middle">{{ question.option_b }}</span>
+                            </label>
+                            
+                            <!-- Option C -->
+                            <label class="form-check-label w-100 p-3 mb-2 rounded text-white d-block" 
+                                   style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: all 0.2s;">
+                                <input type="radio" name="question_{{ question.id }}" value="C" required class="form-check-input me-3 align-middle" style="width: 1.2em; height: 1.2em; border-color: rgba(255, 255, 255, 0.35);">
+                                <span class="align-middle">{{ question.option_c }}</span>
+                            </label>
+                            
+                            <!-- Option D -->
+                            <label class="form-check-label w-100 p-3 mb-2 rounded text-white d-block" 
+                                   style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: all 0.2s;">
+                                <input type="radio" name="question_{{ question.id }}" value="D" required class="form-check-input me-3 align-middle" style="width: 1.2em; height: 1.2em; border-color: rgba(255, 255, 255, 0.35);">
+                                <span class="align-middle">{{ question.option_d }}</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="alert alert-warning text-center border-warning border-opacity-10 py-4">
+                    This quiz doesn't have any questions yet.
+                </div>
+            {% endfor %}
+
+            {% if questions %}
+                <!-- Submit Action Block -->
+                <div class="card border-0 p-4 text-center shadow-lg mt-4" style="background: rgba(10, 8, 19, 0.6); border: 1px solid var(--glass-border) !important;">
+                    <div class="card-body">
+                        <p class="text-secondary small mb-3">Make sure you have answered all questions. Once submitted, you cannot change your answers.</p>
+                        <button type="submit" class="btn btn-primary px-5 py-3 fs-5 fw-bold shadow">
+                            Submit Answers ✉
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Option selection styling script and style adjustments -->
+<style>
+    .form-check-label:hover {
+        background-color: rgba(155, 93, 229, 0.2) !important;
+        border-color: rgba(157, 78, 221, 0.4) !important;
+        transform: translateX(3px);
+    }
+    .form-check-label:has(input[type="radio"]:checked) {
+        background-color: rgba(157, 78, 221, 0.15) !important;
+        border-color: var(--accent-purple) !important;
+        box-shadow: 0 0 12px var(--accent-purple-glow);
+    }
+    .form-check-label input[type="radio"]:checked {
+        background-color: var(--accent-purple);
+        border-color: var(--accent-purple);
+    }
+</style>
+{% endblock %}

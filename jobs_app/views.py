@@ -8,7 +8,7 @@ from django.db import IntegrityError
 from .services.resume_scoring import analyze_resume
 
 from django.shortcuts import render, get_object_or_404, redirect
-from .forms import JobCreationForm
+from .forms import JobCreationForm, InterviewSchedulingForm
 from users_app.permissions import recruiter_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -120,7 +120,7 @@ def job_detail(request, job_id):
             from django.db.models import Window, F, Value
             from django.db.models.functions import RowNumber, Coalesce
             
-            applications = ApplicationModel.objects.filter(job=job).annotate(
+            applications = ApplicationModel.objects.filter(job=job).select_related('applicant__profile').annotate(
                 score_val=Coalesce(F('applicant__profile__score'), Value(0))
             ).annotate(
                 rank=Window(
@@ -404,3 +404,202 @@ def create_job_page(request):
     else:
         form = JobCreationForm()
     return render(request, 'jobs_app/create_job.html', {'form': form})
+
+
+@login_required(login_url='/login-page/')
+@recruiter_required
+def edit_job_page(request, job_id):
+    # Fetch the specific job or return a 404
+    job = get_object_or_404(JobModel, id=job_id)
+    
+    # Object-level permission security check: Ensure this recruiter owns the job posting
+    if job.created_by_id != request.user.id:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Access denied. You can only edit job listings that you posted.")
+        
+    if request.method == 'POST':
+        # Pass instance=job so Django updates the existing database row instead of creating a new one
+        form = JobCreationForm(request.POST, instance=job)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')
+    else:
+        # Pre-populate the form with the current job data
+        form = JobCreationForm(instance=job)
+        
+    return render(request, 'jobs_app/edit_job.html', {'form': form, 'job': job})
+
+
+@login_required(login_url='/login-page/')
+@recruiter_required
+def schedule_interview_page(request, app_id):
+    from .models import ApplicationModel, InterviewModel
+    application = get_object_or_404(ApplicationModel, id=app_id)
+    
+    if application.job.created_by_id != request.user.id:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Access denied. You can only schedule interviews for your own job postings.")
+        
+    try:
+        interview = application.interview
+    except InterviewModel.DoesNotExist:
+        interview = None
+    if request.method == 'POST':
+        form = InterviewSchedulingForm(request.POST, instance=interview)
+        if form.is_valid():
+            interview = form.save(commit=False)
+            interview.application = application
+            interview.save()
+            
+            application.status = 'interview'
+            application.save()
+            
+            # Dispatch Live Notification
+            from .models import NotificationModel
+            NotificationModel.objects.create(
+                recipient=application.applicant,
+                title="Interview Scheduled! 📅",
+                message=f"A recruiter has scheduled an interview for the position: {application.job.title}."
+            )
+            
+            return redirect('dashboard')
+    else:
+        form = InterviewSchedulingForm(instance=interview)
+        
+    return render(request, 'jobs_app/schedule_interview.html', {
+        'form': form,
+        'application': application,
+        'interview': interview
+    })
+
+
+@login_required(login_url='/login-page/')
+def quiz_list_page(request):
+    from .models import QuizModel, QuizAttemptModel
+    from django.db.models import Max
+    
+    quizzes = QuizModel.objects.all()
+    for quiz in quizzes:
+        attempts = QuizAttemptModel.objects.filter(student=request.user, quiz=quiz)
+        if attempts.exists():
+            quiz.highest_score = attempts.aggregate(Max('score'))['score__max']
+            quiz.is_completed = True
+        else:
+            quiz.highest_score = None
+            quiz.is_completed = False
+            
+    return render(request, "jobs_app/quiz_list.html", {
+        "quizzes": quizzes
+    })
+
+
+@login_required(login_url='/login-page/')
+def take_quiz_page(request, quiz_id):
+    from .models import QuizModel, QuestionModel, QuizAttemptModel
+    quiz = get_object_or_404(QuizModel, id=quiz_id)
+    questions = quiz.questions.all()
+    
+    if request.method == 'POST':
+        correct_count = 0
+        total_questions = questions.count()
+        
+        for question in questions:
+            submitted_answer = request.POST.get(f'question_{question.id}')
+            if submitted_answer == question.correct_option:
+                correct_count += 1
+                
+        score_percentage = (correct_count / total_questions * 100.0) if total_questions > 0 else 0.0
+        
+        # Save quiz attempt
+        attempt = QuizAttemptModel.objects.create(
+            student=request.user,
+            quiz=quiz,
+            score=score_percentage
+        )
+        
+        return render(request, "jobs_app/quiz_result.html", {
+            "quiz": quiz,
+            "attempt": attempt,
+            "score": score_percentage,
+            "correct": correct_count,
+            "total": total_questions
+        })
+        
+    return render(request, "jobs_app/take_quiz.html", {
+        "quiz": quiz,
+        "questions": questions
+    })
+
+
+@login_required(login_url='/login-page/')
+@recruiter_required
+def submit_scorecard(request, app_id):
+    from .models import ApplicationModel, InterviewScorecardModel, NotificationModel
+    from django.contrib import messages
+    
+    application = get_object_or_404(ApplicationModel, id=app_id)
+    
+    # Ensure recruiter is the creator of the job posting
+    if application.job.created_by_id != request.user.id:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Access denied. You can only submit scorecards for applicants to your own job postings.")
+        
+    if request.method == 'POST':
+        try:
+            tech_score = int(request.POST.get('technical_score', 0))
+            comm_score = int(request.POST.get('communication_score', 0))
+            prob_score = int(request.POST.get('problem_solving_score', 0))
+        except (ValueError, TypeError):
+            tech_score, comm_score, prob_score = 0, 0, 0
+            
+        feedback_notes = request.POST.get('feedback_notes', '').strip()
+        decision = request.POST.get('status')
+        
+        # Enforce validation (1 to 5)
+        errors = []
+        if not (1 <= tech_score <= 5):
+            errors.append("Technical score must be between 1 and 5.")
+        if not (1 <= comm_score <= 5):
+            errors.append("Communication score must be between 1 and 5.")
+        if not (1 <= prob_score <= 5):
+            errors.append("Problem Solving score must be between 1 and 5.")
+            
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+            return redirect('dashboard')
+            
+        # Create or update scorecard record
+        scorecard, created = InterviewScorecardModel.objects.update_or_create(
+            application=application,
+            defaults={
+                'technical_score': tech_score,
+                'communication_score': comm_score,
+                'problem_solving_score': prob_score,
+                'feedback_notes': feedback_notes,
+            }
+        )
+        
+        # Update application status if decision is offered or rejected
+        if decision in ['offered', 'rejected']:
+            application.status = decision
+            application.save()
+            
+            # Send status update notification
+            status_text = "Offer Extended 🎉" if decision == 'offered' else "Rejected ❌"
+            NotificationModel.objects.create(
+                recipient=application.applicant,
+                title=f"Application Update: {status_text}",
+                message=f"Your application for {application.job.title} has been {decision} after feedback scorecard submission."
+            )
+        else:
+            # Send general feedback notification
+            NotificationModel.objects.create(
+                recipient=application.applicant,
+                title="Interview Scorecard Submitted 📝",
+                message=f"A recruiter has submitted an interview scorecard for your application to {application.job.title}."
+            )
+            
+        messages.success(request, "Interview scorecard submitted successfully.")
+        
+    return redirect('dashboard')

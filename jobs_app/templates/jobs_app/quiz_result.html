@@ -1,0 +1,76 @@
+{% extends 'jobs_app/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <!-- Main Result Panel -->
+        <div class="card border-0 p-5 text-center shadow-lg position-relative overflow-hidden" 
+             style="background: linear-gradient(135deg, rgba(30, 30, 38, 0.95) 0%, rgba(10, 8, 19, 0.98) 100%);">
+            
+            <!-- Glow background highlights -->
+            <div class="position-absolute rounded-circle" style="width: 300px; height: 300px; background: {% if score >= 85 %}rgba(46, 199, 113, 0.08){% else %}rgba(157, 78, 221, 0.08){% endif %}; filter: blur(60px); top: -100px; left: 50%; transform: translateX(-50%); z-index: 1;"></div>
+
+            <div class="position-relative" style="z-index: 2;">
+                <!-- Icon -->
+                <div class="mb-4">
+                    {% if score >= 85 %}
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10 text-success border border-success border-opacity-20 animate-bounce" style="width: 80px; height: 80px; font-size: 2.5rem; animation: bounce 2s infinite;">
+                            🏆
+                        </div>
+                    {% else %}
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20" style="width: 80px; height: 80px; font-size: 2.5rem;">
+                            🎯
+                        </div>
+                    {% endif %}
+                </div>
+
+                <h6 class="text-secondary tracking-widest text-uppercase small mb-2">Quiz Performance Report</h6>
+                <h2 class="fw-bold text-white mb-4">{{ quiz.title }}</h2>
+
+                <!-- Score Meter -->
+                <div class="my-5 position-relative d-inline-block">
+                    <!-- Circular Score Gauge -->
+                    <div class="rounded-circle d-flex flex-column align-items-center justify-content-center border-4 border-opacity-25" 
+                         style="width: 180px; height: 180px; background: rgba(255, 255, 255, 0.02); border: 8px solid {% if score >= 85 %}#2ec771{% else %}var(--accent-purple){% endif %}; box-shadow: 0 0 25px {% if score >= 85 %}rgba(46, 199, 113, 0.25){% else %}var(--accent-purple-glow){% endif %}; margin: 0 auto;">
+                        <span class="fs-1 fw-bold text-white mb-0">{{ score|floatformat:1 }}%</span>
+                        <span class="text-secondary small mt-1">{{ correct }} / {{ total }} Correct</span>
+                    </div>
+                </div>
+
+                <!-- Status Feedback Message -->
+                <div class="px-3 mb-5">
+                    {% if score >= 85 %}
+                        <h4 class="fw-bold text-success mb-2">Excellent Work!</h4>
+                        <p class="text-secondary small mb-0">
+                            You passed with <strong>{{ score|floatformat:1 }}%</strong>! Your <strong>+10 point Match Boost</strong> is now active for any job matching the category <strong>"{{ quiz.get_category_display }}"</strong>.
+                        </p>
+                    {% else %}
+                        <h4 class="fw-bold text-warning mb-2">Keep Practicing!</h4>
+                        <p class="text-secondary small mb-0">
+                            You scored <strong>{{ score|floatformat:1 }}%</strong>. Score <strong>85% or higher</strong> to unlock a +10 point boost on matching jobs. You can retake the quiz anytime!
+                        </p>
+                    {% endif %}
+                </div>
+
+                <!-- Actions Grid -->
+                <div class="d-flex flex-column gap-3">
+                    <a href="{% url 'take_quiz' quiz.id %}" class="btn btn-primary py-3 fw-bold">
+                        {% if score >= 85 %}Retake Challenge ↻{% else %}Try Again 🚀{% endif %}
+                    </a>
+                    <div class="d-flex gap-3">
+                        <a href="{% url 'quiz_list' %}" class="btn btn-secondary flex-fill py-2.5">All Quizzes</a>
+                        <a href="/dashboard/" class="btn btn-outline-light flex-fill py-2.5">Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+</style>
+{% endblock %}

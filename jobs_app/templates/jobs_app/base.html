@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Portal</title>
+    <title>{% block title %}JobSnap{% endblock %}</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -214,16 +214,19 @@
 <!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
-        <a class="navbar-brand" href="/">JobPortal 🚀</a>
+        <a class="navbar-brand" href="/" style="font-weight: 800; font-size: 1.6rem; background: linear-gradient(45deg, #9b5de5, #f15bb5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px;">JobSnap ⚡</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="collapse navbar-collapse justify-content-end" id="navbarContent">
-            <div id="navbar-dynamic-links" class="d-flex align-items-center gap-2">
-                <!-- Links will be loaded dynamically by script below -->
-                <a class="btn btn-outline-light btn-sm" href="/">Home</a>
-                <a class="btn btn-outline-light btn-sm" href="/jobs/">Jobs</a>
+        <div class="collapse navbar-collapse justify-content-end align-items-center gap-3" id="navbarContent">
+            <div class="d-flex align-items-center gap-3">
+                <div id="navbar-dynamic-links" class="d-flex align-items-center gap-2">
+                    <!-- Links will be loaded dynamically by script below -->
+                    <a class="btn btn-outline-light btn-sm" href="/">Home</a>
+                    <a class="btn btn-outline-light btn-sm" href="/jobs/">Jobs</a>
+                </div>
+                {% block nav_notifications %}{% endblock %}
             </div>
         </div>
     </div>

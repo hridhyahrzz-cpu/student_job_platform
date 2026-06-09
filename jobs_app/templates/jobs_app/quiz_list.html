@@ -1,0 +1,83 @@
+{% extends 'jobs_app/base.html' %}
+
+{% block title %}JobSnap | Technical Assessments{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <!-- Header Section -->
+        <div class="card border-0 mb-5 p-4 text-center" style="background: linear-gradient(135deg, rgba(157, 78, 221, 0.1) 0%, rgba(0, 180, 216, 0.1) 100%); border: 1px solid var(--glass-border) !important;">
+            <div class="card-body">
+                <h1 class="fw-bold mb-3" style="background: linear-gradient(to right, #ffffff, #c77dff, #00b4d8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    Aptitude & Coding Test Engine 🧠
+                </h1>
+                <p class="text-secondary mx-auto" style="max-width: 600px;">
+                    Test your knowledge in Python, DSA, and Aptitude. Score <strong>85% or higher</strong> on a category matching quiz to unlock a <strong>+10 score boost</strong> on your job applications!
+                </p>
+                <a href="/dashboard/" class="btn btn-secondary btn-sm px-4 mt-2">← Back to Dashboard</a>
+            </div>
+        </div>
+
+        <!-- Quizzes Grid -->
+        <div class="row g-4">
+            {% for quiz in quizzes %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 p-3 d-flex flex-column justify-content-between">
+                        <div class="card-body">
+                            <!-- Category Badge -->
+                            <div class="mb-3">
+                                {% if quiz.category == 'python' %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill small">
+                                        🐍 Python Programming
+                                    </span>
+                                {% elif quiz.category == 'dsa' %}
+                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 rounded-pill small">
+                                        💻 Data Structures & Algos
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill small">
+                                        📊 Quantitative Aptitude
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <h4 class="fw-bold text-white mb-3">{{ quiz.title }}</h4>
+                            <p class="text-secondary small mb-4">Challenge yourself with questions designed to evaluate your domain expertise.</p>
+                        </div>
+
+                        <div class="card-footer bg-transparent border-0 pt-0">
+                            <!-- Attempt Status -->
+                            {% if quiz.is_completed %}
+                                <div class="mb-3 p-3 rounded text-center bg-black bg-opacity-20 border border-secondary border-opacity-10">
+                                    <div class="small text-secondary mb-1">Highest Score</div>
+                                    <div class="fw-bold fs-4 {% if quiz.highest_score >= 85 %}text-success{% else %}text-warning{% endif %}">
+                                        {{ quiz.highest_score|floatformat:1 }}%
+                                    </div>
+                                    {% if quiz.highest_score >= 85 %}
+                                        <div class="text-success small mt-1">✔ 10 Point Boost Active</div>
+                                    {% else %}
+                                        <div class="text-secondary small mt-1">Target 85% for boost</div>
+                                    {% endif %}
+                                </div>
+                                <a href="{% url 'take_quiz' quiz.id %}" class="btn btn-outline-light w-100 py-2">Retake Challenge ↻</a>
+                            {% else %}
+                                <div class="mb-3 p-3 rounded text-center bg-black bg-opacity-10 border border-secondary border-opacity-5">
+                                    <div class="small text-secondary mb-1">Status</div>
+                                    <div class="fw-bold text-muted">Unattempted</div>
+                                </div>
+                                <a href="{% url 'take_quiz' quiz.id %}" class="btn btn-primary w-100 py-2">Start Quiz 🚀</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12 text-center py-5">
+                    <div class="alert alert-secondary border border-secondary border-opacity-10">
+                        <p class="mb-0 text-secondary">No quizzes have been created yet. Please check back later!</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

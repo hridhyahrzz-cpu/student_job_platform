@@ -7,23 +7,40 @@
         
         <div class="d-flex flex-column gap-3">
             {% for app in applications %}
-                <div class="card border-0 shadow-sm p-4">
+                <div class="card text-white mb-4 shadow border-0 p-4" style="background: #1e1e26; border: 1px solid rgba(255, 255, 255, 0.1);">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                             <div>
-                                <h4 class="card-title fw-bold mb-1">{{ app.job.title }}</h4>
+                                <h4 class="card-title fw-bold text-white mb-1" style="color: #ffffff; font-weight: 700;">{{ app.job.title }}</h4>
                                 <div class="d-flex align-items-center gap-2">
-                                    <span class="badge bg-secondary bg-opacity-10 text-white border border-secondary border-opacity-25 px-2 py-1 rounded">{{ app.job.company_name }}</span>
+                                    <span class="badge bg-secondary bg-opacity-20 text-white border border-secondary border-opacity-25 px-2 py-1 rounded" style="color: #f3f4f6; font-weight: 600;">{{ app.job.company_name }}</span>
                                     <span class="text-secondary small">📍 {{ app.job.location }}</span>
                                 </div>
                             </div>
-                            <div>
-                                {% if app.status == 'accepted' %}
-                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">Accepted</span>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if app.status == 'offered' %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">Offer Extended</span>
                                 {% elif app.status == 'rejected' %}
                                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2 rounded-pill">Rejected</span>
+                                {% elif app.status == 'hr' %}
+                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 rounded-pill">HR Round</span>
+                                {% elif app.status == 'technical' %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill">Technical Interview</span>
+                                {% elif app.status == 'assessment' %}
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill">Online Assessment</span>
                                 {% else %}
-                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill">Pending</span>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill">Applied</span>
+                                {% endif %}
+
+                                <!-- Match Analysis Badge -->
+                                <span class="badge px-3 py-2 rounded-pill" style="font-size: 0.85rem; background-color: {{ app.match_analysis.color }}22; color: {{ app.match_analysis.color }}; border: 1px solid {{ app.match_analysis.color }}">
+                                    {{ app.match_analysis.text }} ({{ app.match_analysis.score }}/100)
+                                </span>
+
+                                {% if app.match_analysis.text == "Low Match" %}
+                                    <button type="button" class="btn btn-sm btn-link text-warning p-0 ms-2" data-bs-toggle="modal" data-bs-target="#skillsModal{{ app.id }}" style="font-size: 0.85rem; text-decoration: underline;">
+                                        Why am I not matching?
+                                    </button>
                                 {% endif %}
                             </div>
                         </div>
@@ -32,10 +49,127 @@
                             <span class="text-secondary small d-block mb-1">Cover Letter Submitted:</span>
                             <p class="text-secondary small border border-secondary border-opacity-10 rounded p-2 bg-white bg-opacity-5 mb-0">{{ app.cover_letter }}</p>
                         </div>
+
+                        <!-- Multi-Stage Interview Timeline Tracker -->
+                        <div class="w-100 my-4 px-2">
+                            <div class="position-relative d-flex justify-content-between align-items-start" style="padding-top: 8px;">
+                                <!-- Background Track -->
+                                <div class="position-absolute" style="height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; top: 22px; left: 24px; right: 24px; z-index: 1;"></div>
+                                <!-- Animated Progress Fill -->
+                                <div class="position-absolute" style="height: 4px; background: linear-gradient(90deg, #9b5de5, #f15bb5); border-radius: 2px; top: 22px; left: 24px; z-index: 2; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); width: {% if app.status == 'applied' %}0%{% elif app.status == 'assessment' %}20%{% elif app.status == 'technical' %}40%{% elif app.status == 'hr' %}60%{% elif app.status == 'offered' %}80%{% elif app.status == 'rejected' %}0%{% else %}0%{% endif %};"></div>
+
+                                <!-- Step 1: Applied -->
+                                <div class="d-flex flex-column align-items-center position-relative" style="z-index: 3; flex: 1;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 28px; height: 28px; background: {% if app.status == 'rejected' %}#e74c3c{% else %}#2ec771{% endif %}; color: white; font-size: 0.7rem; font-weight: 700; border: 3px solid #1e1e26; box-shadow: 0 0 8px rgba(46, 199, 113, 0.3);">✓</div>
+                                    <span class="text-white-50 mt-1 text-center" style="font-size: 0.65rem; line-height: 1.2;">Applied</span>
+                                </div>
+
+                                <!-- Step 2: Assessment -->
+                                <div class="d-flex flex-column align-items-center position-relative" style="z-index: 3; flex: 1;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 28px; height: 28px; border: 3px solid #1e1e26; font-size: 0.7rem; font-weight: 700; color: white; {% if app.status == 'assessment' %}background: #9b5de5; box-shadow: 0 0 12px rgba(155, 93, 229, 0.5); animation: pulse-glow 2s infinite;{% elif app.status == 'technical' or app.status == 'hr' or app.status == 'offered' %}background: #2ec771; box-shadow: 0 0 8px rgba(46, 199, 113, 0.3);{% elif app.status == 'rejected' %}background: #e74c3c;{% else %}background: #2c2c35;{% endif %}">
+                                         {% if app.status == 'technical' or app.status == 'hr' or app.status == 'offered' %}✓{% elif app.status == 'assessment' %}⬤{% elif app.status == 'rejected' %}✕{% else %}2{% endif %}
+                                    </div>
+                                    <span class="text-white-50 mt-1 text-center" style="font-size: 0.65rem; line-height: 1.2;">Test</span>
+                                </div>
+
+                                <!-- Step 3: Technical -->
+                                <div class="d-flex flex-column align-items-center position-relative" style="z-index: 3; flex: 1;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 28px; height: 28px; border: 3px solid #1e1e26; font-size: 0.7rem; font-weight: 700; color: white; {% if app.status == 'technical' %}background: #9b5de5; box-shadow: 0 0 12px rgba(155, 93, 229, 0.5); animation: pulse-glow 2s infinite;{% elif app.status == 'hr' or app.status == 'offered' %}background: #2ec771; box-shadow: 0 0 8px rgba(46, 199, 113, 0.3);{% elif app.status == 'rejected' %}background: #e74c3c;{% else %}background: #2c2c35;{% endif %}">
+                                         {% if app.status == 'hr' or app.status == 'offered' %}✓{% elif app.status == 'technical' %}⬤{% elif app.status == 'rejected' %}✕{% else %}3{% endif %}
+                                    </div>
+                                    <span class="text-white-50 mt-1 text-center" style="font-size: 0.65rem; line-height: 1.2;">Technical</span>
+                                </div>
+
+                                <!-- Step 4: HR -->
+                                <div class="d-flex flex-column align-items-center position-relative" style="z-index: 3; flex: 1;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 28px; height: 28px; border: 3px solid #1e1e26; font-size: 0.7rem; font-weight: 700; color: white; {% if app.status == 'hr' %}background: #9b5de5; box-shadow: 0 0 12px rgba(155, 93, 229, 0.5); animation: pulse-glow 2s infinite;{% elif app.status == 'offered' %}background: #2ec771; box-shadow: 0 0 8px rgba(46, 199, 113, 0.3);{% elif app.status == 'rejected' %}background: #e74c3c;{% else %}background: #2c2c35;{% endif %}">
+                                         {% if app.status == 'offered' %}✓{% elif app.status == 'hr' %}⬤{% elif app.status == 'rejected' %}✕{% else %}4{% endif %}
+                                    </div>
+                                    <span class="text-white-50 mt-1 text-center" style="font-size: 0.65rem; line-height: 1.2;">HR</span>
+                                </div>
+
+                                <!-- Step 5: Offered -->
+                                <div class="d-flex flex-column align-items-center position-relative" style="z-index: 3; flex: 1;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 28px; height: 28px; border: 3px solid #1e1e26; font-size: 0.7rem; font-weight: 700; color: white; {% if app.status == 'offered' %}background: linear-gradient(135deg, #2ec771, #00d2ff); box-shadow: 0 0 14px rgba(46, 199, 113, 0.5); animation: pulse-glow 2s infinite;{% elif app.status == 'rejected' %}background: #e74c3c;{% else %}background: #2c2c35;{% endif %}">
+                                         {% if app.status == 'offered' %}🎉{% elif app.status == 'rejected' %}✕{% else %}5{% endif %}
+                                    </div>
+                                    <span class="text-white-50 mt-1 text-center" style="font-size: 0.65rem; line-height: 1.2;">{% if app.status == 'rejected' %}Rejected{% else %}Offered{% endif %}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if app.scorecard %}
+                            <div class="mt-3 p-3 border border-secondary border-opacity-20 rounded" style="background: rgba(18, 18, 20, 0.6); border-left: 4px solid #9b5de5 !important;">
+                                <h6 class="fw-bold mb-3" style="color: #9b5de5 !important; font-size: 0.9rem;">Recruiter Interview Feedback Scorecard 📝</h6>
+                                <div class="row g-3 text-secondary mb-3" style="font-size: 0.85rem;">
+                                    <div class="col-sm-4">
+                                        <span class="d-block text-muted small">Technical Rating</span>
+                                        <span class="text-warning fw-bold fs-6" style="text-shadow: 0 0 8px rgba(255, 193, 7, 0.4);">
+                                            {{ "★"|rjust:app.scorecard.technical_score }}
+                                        </span>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <span class="d-block text-muted small">Communication Rating</span>
+                                        <span class="text-warning fw-bold fs-6" style="text-shadow: 0 0 8px rgba(255, 193, 7, 0.4);">
+                                            {{ "★"|rjust:app.scorecard.communication_score }}
+                                        </span>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <span class="d-block text-muted small">Problem Solving Rating</span>
+                                        <span class="text-warning fw-bold fs-6" style="text-shadow: 0 0 8px rgba(255, 193, 7, 0.4);">
+                                            {{ "★"|rjust:app.scorecard.problem_solving_score }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% if app.scorecard.feedback_notes %}
+                                    <div class="p-3 rounded bg-black bg-opacity-25 border border-secondary border-opacity-10 text-white" style="font-size: 0.8rem; line-height: 1.4;">
+                                        <strong class="text-white">Evaluator Notes:</strong>
+                                        <p class="mb-0 mt-1 text-secondary" style="font-size: 0.78rem;">{{ app.scorecard.feedback_notes }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
                         
                         <div class="d-flex justify-content-between align-items-center border-top border-secondary border-opacity-10 pt-3 flex-wrap gap-2">
                             <span class="text-secondary small">📅 Applied on: {{ app.applied_at|date:"M d, Y" }}</span>
                             <a href="/jobs/{{ app.job.id }}/" class="btn btn-secondary btn-sm px-3">View Job Details</a>
+                    </div>
+
+                    <!-- Glassmorphic Modal Block -->
+                    <div class="modal fade" id="skillsModal{{ app.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content text-white" style="background: rgba(30, 30, 38, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1);">
+                                <div class="modal-header border-bottom border-secondary">
+                                    <h5 class="modal-title text-info">Skill Alignment Analysis</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-start">
+                                    <p class="text-muted small">This real-time feedback highlights core technical terms extracted from the job posting compared against your background resume text profile.</p>
+                                    
+                                    <h6 class="text-success mt-3">✔ Matched Skills</h6>
+                                    <div class="d-flex flex-wrap gap-2 my-2">
+                                        {% for skill in app.missing_skills_analysis.matched %}
+                                            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 px-2 py-1 rounded">{{ skill }}</span>
+                                        {% empty %}
+                                            <span class="text-muted small">None identified</span>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <h6 class="text-danger mt-4">✘ Missing Keywords</h6>
+                                    <div class="d-flex flex-wrap gap-2 my-2">
+                                        {% for skill in app.missing_skills_analysis.missing %}
+                                            <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 px-2 py-1 rounded">{{ skill }}</span>
+                                        {% empty %}
+                                            <span class="text-success small">Your background matches all primary keywords tracked for this role!</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -48,4 +182,10 @@
         </div>
     </div>
 </div>
+<style>
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 8px rgba(155, 93, 229, 0.4); }
+    50% { box-shadow: 0 0 18px rgba(155, 93, 229, 0.8); }
+}
+</style>
 {% endblock %}

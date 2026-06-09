@@ -1,5 +1,7 @@
 {% extends 'jobs_app/base.html' %}
 
+{% block title %}JobSnap | Recruiter Dashboard{% endblock %}
+
 {% block content %}
 <div class="row g-4 justify-content-center">
     <!-- Welcome Panel -->
@@ -30,7 +32,10 @@
                             {% for job in jobs %}
                                 <div class="p-3 border border-secondary border-opacity-10 rounded bg-white bg-opacity-5">
                                     <h6 class="fw-bold text-white mb-1">{{ job.title }}</h6>
-                                    <p class="text-secondary small mb-0">{{ job.location }} · {{ job.salary }}</p>
+                                    <p class="text-secondary small mb-2">{{ job.location }} · {{ job.salary }}</p>
+                                    <div class="d-flex justify-content-end">
+                                        <a href="{% url 'edit_job' job.id %}" class="btn btn-outline-secondary btn-sm px-2 py-1" style="font-size: 0.8rem;">Edit Job</a>
+                                    </div>
                                 </div>
                             {% empty %}
                                 <p class="text-secondary small">No posted jobs found.</p>
@@ -45,6 +50,27 @@
                 <div class="card border-0 p-4 h-100">
                     <div class="card-body">
                         <h4 class="fw-bold mb-4">Incoming Applications</h4>
+
+                        <!-- Horizontal Glassmorphic Filter Tray -->
+                        <form method="GET" action="" class="p-3 mb-4 rounded d-flex flex-wrap gap-3 align-items-end" style="background: #121214; border: 1px solid rgba(155, 93, 229, 0.2); border-radius: 8px;">
+                            <div class="flex-grow-1" style="min-width: 200px;">
+                                <label class="text-white-50 small mb-1">Search Keywords (Skills, Names)</label>
+                                <input type="text" name="search_query" value="{{ request.GET.search_query|default:'' }}" class="form-control text-white border-0" style="background: rgba(255,255,255,0.05);" placeholder="e.g. Python, Django...">
+                            </div>
+                            <div style="width: 140px;">
+                                <label class="text-white-50 small mb-1">Min CGPA / Score</label>
+                                <input type="number" step="0.1" name="min_cgpa" value="{{ request.GET.min_cgpa|default:'' }}" class="form-control text-white border-0" style="background: rgba(255,255,255,0.05);" placeholder="0.0">
+                            </div>
+                            <div style="width: 140px;">
+                                <label class="text-white-50 small mb-1">Min Test Score (%)</label>
+                                <input type="number" step="0.1" name="min_quiz_score" value="{{ request.GET.min_quiz_score|default:'' }}" class="form-control text-white border-0" style="background: rgba(255,255,255,0.05);" placeholder="0.0">
+                            </div>
+                            <button type="submit" class="btn text-white px-4" style="background: linear-gradient(45deg, #9b5de5, #f15bb5); font-weight: 600;">
+                                Filter Batch
+                            </button>
+                            <a href="?" class="btn btn-dark border-0 px-3" style="background: rgba(255,255,255,0.1);">Clear</a>
+                        </form>
+
                         <div class="d-flex flex-column gap-3">
                             {% for app in applications %}
                                 <div class="p-4 border border-secondary border-opacity-10 rounded bg-white bg-opacity-5">
@@ -53,16 +79,25 @@
                                             <h5 class="fw-bold text-white mb-1">
                                                 👤 {{ app.applicant.username }}
                                                 <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 py-0 px-2 ms-2 rounded-pill small" style="font-size: 0.8rem;">Rank #{{ app.rank }}</span>
+                                                <span class="badge px-3 py-1 rounded-pill ms-2 small" style="font-size: 0.8rem; background-color: {{ app.match_analysis.color }}22; color: {{ app.match_analysis.color }}; border: 1px solid {{ app.match_analysis.color }}">
+                                                    {{ app.match_analysis.text }} ({{ app.match_analysis.score }}/100)
+                                                </span>
                                             </h5>
                                             <p class="text-secondary small mb-0">Applied for: <strong>{{ app.job.title }}</strong></p>
                                         </div>
                                         <div id="status-badge-{{ app.id }}">
-                                            {% if app.status == 'accepted' %}
-                                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">Accepted</span>
+                                            {% if app.status == 'offered' %}
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">Offer Extended</span>
                                             {% elif app.status == 'rejected' %}
                                                 <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2 rounded-pill">Rejected</span>
+                                            {% elif app.status == 'hr' %}
+                                                <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 rounded-pill">HR Round</span>
+                                            {% elif app.status == 'technical' %}
+                                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill">Technical Interview</span>
+                                            {% elif app.status == 'assessment' %}
+                                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill">Online Assessment</span>
                                             {% else %}
-                                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill">Pending</span>
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill">Applied</span>
                                             {% endif %}
                                         </div>
                                     </div>
@@ -72,9 +107,117 @@
                                         <p class="text-white small border border-secondary border-opacity-10 rounded p-2 bg-black bg-opacity-10">{{ app.cover_letter }}</p>
                                     </div>
  
-                                    <div id="status-actions-{{ app.id }}" class="d-flex gap-2" style="display: {% if app.status == 'pending' %}flex{% else %}none{% endif %} !important;">
-                                        <button onclick="updateApplicationStatus({{ app.id }}, 'accepted')" class="btn btn-success btn-sm px-3">Accept</button>
-                                        <button onclick="updateApplicationStatus({{ app.id }}, 'rejected')" class="btn btn-danger btn-sm px-3">Reject</button>
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+                                        <div id="status-actions-{{ app.id }}" class="d-flex gap-2 align-items-center" style="display: {% if app.status != 'offered' and app.status != 'rejected' %}flex{% else %}none{% endif %} !important;">
+                                            <!-- Stage Advancement Dropdown -->
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm px-3 dropdown-toggle text-white" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background: linear-gradient(45deg, #9b5de5, #7b2ff7); font-weight: 600; font-size: 0.8rem;">
+                                                    Advance Stage ▸
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-dark" style="background: #1e1e26; border: 1px solid rgba(155, 93, 229, 0.3);">
+                                                    <li><a class="dropdown-item small" href="#" onclick="event.preventDefault(); updateApplicationStatus({{ app.id }}, 'assessment')">📝 Online Assessment</a></li>
+                                                    <li><a class="dropdown-item small" href="#" onclick="event.preventDefault(); updateApplicationStatus({{ app.id }}, 'technical')">💻 Technical Interview</a></li>
+                                                    <li><a class="dropdown-item small" href="#" onclick="event.preventDefault(); updateApplicationStatus({{ app.id }}, 'hr')">🤝 HR Round</a></li>
+                                                    <li><hr class="dropdown-divider" style="border-color: rgba(155, 93, 229, 0.2);"></li>
+                                                    <li><a class="dropdown-item small text-success" href="#" onclick="event.preventDefault(); updateApplicationStatus({{ app.id }}, 'offered')">🎉 Extend Offer</a></li>
+                                                </ul>
+                                            </div>
+                                            <button onclick="updateApplicationStatus({{ app.id }}, 'rejected')" class="btn btn-outline-danger btn-sm px-3" style="font-size: 0.8rem;">Reject</button>
+                                        </div>
+                                        <div>
+                                            {% if app.interview %}
+                                                <span class="text-info small">📅 Scheduled: {{ app.interview.scheduled_time|date:"M d, P" }}</span>
+                                                <a href="{% url 'schedule_interview' app.id %}" class="btn btn-outline-info btn-sm px-2 py-1 ms-2" style="font-size: 0.8rem;">Reschedule</a>
+                                                
+                                                {% if app.status == 'technical' or app.status == 'hr' %}
+                                                    {% if app.scorecard %}
+                                                        <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-25 px-2.5 py-1.5 ms-2 small">Scorecard Submitted</span>
+                                                    {% else %}
+                                                        <button type="button" class="btn btn-primary btn-sm px-2.5 py-1 ms-2" data-bs-toggle="modal" data-bs-target="#scorecardModal{{ app.id }}" style="font-size: 0.8rem; background: #9b5de5; border-color: #9b5de5;">Submit Feedback 📝</button>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% else %}
+                                                <a href="{% url 'schedule_interview' app.id %}" class="btn btn-outline-info btn-sm px-2 py-1" style="font-size: 0.8rem;">Schedule Interview</a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Scorecard Modal -->
+                                    <div class="modal fade" id="scorecardModal{{ app.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content text-white" style="background: rgba(30, 30, 38, 0.96); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 16px;">
+                                                <div class="modal-header border-bottom border-secondary border-opacity-20 pb-3">
+                                                    <h5 class="modal-title fw-bold" style="color: #9b5de5 !important;">Evaluation Scorecard for {{ app.applicant.username }}</h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <form method="POST" action="{% url 'submit_scorecard' app.id %}">
+                                                    {% csrf_token %}
+                                                    <div class="modal-body text-start py-4">
+                                                        <p class="text-secondary small mb-4">Rate the candidate's performance across key competencies. Ratings must be between 1 (poor) and 5 (excellent).</p>
+                                                        
+                                                        <!-- Technical Score -->
+                                                        <div class="mb-3">
+                                                            <label class="form-label text-light fw-semibold small">Technical Competency (1 - 5)</label>
+                                                            <select name="technical_score" class="form-select text-white border-secondary border-opacity-20" style="background: rgba(255, 255, 255, 0.05); border-radius: 8px;" required>
+                                                                <option value="" disabled selected style="background: #1e1e26; color: #aaa;">Select Rating</option>
+                                                                <option value="5" style="background: #1e1e26;">5 - Excellent (Strong code, architecture, system design)</option>
+                                                                <option value="4" style="background: #1e1e26;">4 - Good (Solid problem solver, understands core concepts)</option>
+                                                                <option value="3" style="background: #1e1e26;">3 - Average (Understands basics, needs minor guidance)</option>
+                                                                <option value="2" style="background: #1e1e26;">2 - Below Average (Struggles with implementation/logic)</option>
+                                                                <option value="1" style="background: #1e1e26;">1 - Poor (Unsatisfactory understanding/performance)</option>
+                                                            </select>
+                                                        </div>
+                                                        
+                                                        <!-- Communication Score -->
+                                                        <div class="mb-3">
+                                                            <label class="form-label text-light fw-semibold small">Communication Skills (1 - 5)</label>
+                                                            <select name="communication_score" class="form-select text-white border-secondary border-opacity-20" style="background: rgba(255, 255, 255, 0.05); border-radius: 8px;" required>
+                                                                <option value="" disabled selected style="background: #1e1e26; color: #aaa;">Select Rating</option>
+                                                                <option value="5" style="background: #1e1e26;">5 - Excellent (Clear explanation, asks great questions)</option>
+                                                                <option value="4" style="background: #1e1e26;">4 - Good (Communicates thoughts well, active listener)</option>
+                                                                <option value="3" style="background: #1e1e26;">3 - Average (Understood adequately, minor barriers)</option>
+                                                                <option value="2" style="background: #1e1e26;">2 - Below Average (Difficult to follow line of reasoning)</option>
+                                                                <option value="1" style="background: #1e1e26;">1 - Poor (Highly ineffective communication / unresponsive)</option>
+                                                            </select>
+                                                        </div>
+                                                        
+                                                        <!-- Problem Solving Score -->
+                                                        <div class="mb-3">
+                                                            <label class="form-label text-light fw-semibold small">Problem Solving & Logic (1 - 5)</label>
+                                                            <select name="problem_solving_score" class="form-select text-white border-secondary border-opacity-20" style="background: rgba(255, 255, 255, 0.05); border-radius: 8px;" required>
+                                                                <option value="" disabled selected style="background: #1e1e26; color: #aaa;">Select Rating</option>
+                                                                <option value="5" style="background: #1e1e26;">5 - Excellent (Optimized solution, handles edge cases)</option>
+                                                                <option value="4" style="background: #1e1e26;">4 - Good (Dry runs, trace, fixes bugs on hint)</option>
+                                                                <option value="3" style="background: #1e1e26;">3 - Average (Brute force solution, struggles to optimize)</option>
+                                                                <option value="2" style="background: #1e1e26;">2 - Below Average (Unstructured logic, hints don't resolve)</option>
+                                                                <option value="1" style="background: #1e1e26;">1 - Poor (Unable to approach or understand the problem)</option>
+                                                            </select>
+                                                        </div>
+
+                                                        <!-- Feedback Notes -->
+                                                        <div class="mb-3">
+                                                            <label class="form-label text-light fw-semibold small">Evaluation Notes & Comments</label>
+                                                            <textarea name="feedback_notes" class="form-control text-white border-secondary border-opacity-20" rows="3" placeholder="Provide detailed behavioral observations, strengths and weaknesses..." style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; font-size: 0.85rem;"></textarea>
+                                                        </div>
+
+                                                        <!-- Decision Dropdown -->
+                                                        <div class="mb-3">
+                                                            <label class="form-label text-light fw-semibold small">Application Decision Status</label>
+                                                            <select name="status" class="form-select text-white border-secondary border-opacity-20" style="background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                                                <option value="technical" style="background: #1e1e26;">Keep Status - In Technical Review</option>
+                                                                <option value="hr" style="background: #1e1e26; color: #17a2b8;">Advance to HR Round 🤝</option>
+                                                                <option value="offered" style="background: #1e1e26; color: #2ec771;">Extend Offer 🎉</option>
+                                                                <option value="rejected" style="background: #1e1e26; color: #e74c3c;">Reject Candidate ❌</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer border-top border-secondary border-opacity-20 pt-3">
+                                                        <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-primary btn-sm px-4" style="background: #9b5de5; border-color: #9b5de5;">Submit Scorecard</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             {% empty %}
@@ -113,18 +256,27 @@ function updateApplicationStatus(appId, newStatus) {
     })
     .then(data => {
         if (data.success) {
-            // Update status badge
+            // Update status badge dynamically
             const badgeContainer = document.getElementById(`status-badge-${appId}`);
-            if (newStatus === 'accepted') {
-                badgeContainer.innerHTML = `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">Accepted</span>`;
-            } else if (newStatus === 'rejected') {
-                badgeContainer.innerHTML = `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2 rounded-pill">Rejected</span>`;
+            const badgeMap = {
+                'assessment': { cls: 'bg-warning text-warning border-warning', text: 'Online Assessment' },
+                'technical': { cls: 'bg-primary text-primary border-primary', text: 'Technical Interview' },
+                'hr': { cls: 'bg-info text-info border-info', text: 'HR Round' },
+                'offered': { cls: 'bg-success text-success border-success', text: 'Offer Extended' },
+                'rejected': { cls: 'bg-danger text-danger border-danger', text: 'Rejected' },
+            };
+            const badge = badgeMap[newStatus];
+            if (badge && badgeContainer) {
+                const [bgClass, textClass, borderClass] = badge.cls.split(' ');
+                badgeContainer.innerHTML = `<span class="badge ${bgClass} bg-opacity-10 ${textClass} border ${borderClass} border-opacity-25 px-3 py-2 rounded-pill">${badge.text}</span>`;
             }
             
-            // Hide action buttons
-            const actionsContainer = document.getElementById(`status-actions-${appId}`);
-            if (actionsContainer) {
-                actionsContainer.style.setProperty('display', 'none', 'important');
+            // Hide action buttons only for terminal stages
+            if (newStatus === 'offered' || newStatus === 'rejected') {
+                const actionsContainer = document.getElementById(`status-actions-${appId}`);
+                if (actionsContainer) {
+                    actionsContainer.style.setProperty('display', 'none', 'important');
+                }
             }
         } else {
             alert('Error updating status: ' + (data.error || 'Unknown error'));
@@ -136,4 +288,117 @@ function updateApplicationStatus(appId, newStatus) {
     });
 }
 </script>
+{% endblock %}
+
+{% block nav_notifications %}
+<div class="dropdown" id="notification-dropdown-container" style="position: relative; display: inline-block;">
+    <button class="btn btn-link position-relative p-2 text-white border-0 shadow-none dropdown-toggle no-arrow" type="button" id="notificationBell" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.25rem; transition: transform 0.2s ease;">
+        🔔
+        {% if unread_notifications.count > 0 %}
+            <span class="position-absolute translate-middle badge rounded-circle bg-danger border border-light" id="notification-badge" style="width: 18px; height: 18px; font-size: 0.65rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; top: 10px; left: 28px; box-shadow: 0 0 10px rgba(220, 53, 69, 0.75);">
+                {{ unread_notifications.count }}
+            </span>
+        {% endif %}
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end p-2 border-0 shadow-lg" aria-labelledby="notificationBell" style="position: absolute; right: 0; top: 100%; z-index: 1050; min-width: 320px; background: #121214; border: 1px solid rgba(155, 93, 229, 0.25); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+        <li class="dropdown-header text-white border-bottom border-secondary border-opacity-25 pb-2 mb-2 d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Alert Center</span>
+            <span class="badge bg-secondary bg-opacity-20 text-secondary" id="dropdown-header-count">{{ unread_notifications.count }} New</span>
+        </li>
+        <div id="notification-list" style="max-height: 280px; overflow-y: auto;">
+            {% for notification in unread_notifications %}
+                <li class="notification-item p-2 mb-2 rounded border border-secondary border-opacity-10 bg-white bg-opacity-5" id="notification-{{ notification.id }}" style="transition: all 0.3s ease;">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <h6 class="fw-bold text-white mb-1" style="font-size: 0.85rem;">{{ notification.title }}</h6>
+                            <p class="text-secondary mb-1" style="font-size: 0.75rem; line-height: 1.3;">{{ notification.message }}</p>
+                            <span class="text-muted" style="font-size: 0.65rem;">{{ notification.timestamp|timesince }} ago</span>
+                        </div>
+                        <a href="/notifications/{{ notification.id }}/read/" class="btn-dismiss btn btn-sm btn-link text-warning text-decoration-none p-0 animate-glow" data-id="{{ notification.id }}" style="font-size: 0.7rem; font-weight: 600; text-shadow: 0 0 5px rgba(250, 204, 21, 0.4);">Dismiss</a>
+                    </div>
+                </li>
+            {% empty %}
+                <li class="text-center py-4 text-muted small" id="no-notifications-placeholder">
+                    No new notifications.
+                </li>
+            {% endfor %}
+        </div>
+    </ul>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const dropdownContainer = document.getElementById('notification-dropdown-container');
+    if (!dropdownContainer) return;
+    
+    dropdownContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-dismiss')) {
+            e.preventDefault();
+            const notificationId = e.target.getAttribute('data-id');
+            const dismissUrl = e.target.getAttribute('href');
+            
+            // Perform AJAX POST request to mark the notification as read
+            fetch(dismissUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'x-requested-with': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const item = document.getElementById(`notification-${notificationId}`);
+                    if (item) {
+                        item.style.opacity = '0';
+                        item.style.transform = 'scale(0.9)';
+                        setTimeout(() => {
+                            item.remove();
+                            
+                            // Update counts
+                            const badge = document.getElementById('notification-badge');
+                            const headerCount = document.getElementById('dropdown-header-count');
+                            const list = document.getElementById('notification-list');
+                            const remainingItems = list.querySelectorAll('.notification-item');
+                            
+                            if (remainingItems.length === 0) {
+                                if (badge) badge.remove();
+                                if (headerCount) headerCount.innerText = '0 New';
+                                list.innerHTML = `
+                                    <li class="text-center py-4 text-muted small" id="no-notifications-placeholder">
+                                        No new notifications.
+                                    </li>
+                                `;
+                            } else {
+                                const newCount = remainingItems.length;
+                                if (badge) badge.innerText = newCount;
+                                if (headerCount) headerCount.innerText = `${newCount} New`;
+                            }
+                        }, 300);
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('Error dismissing notification:', err);
+                // Fallback to direct navigation if AJAX fails
+                window.location.href = dismissUrl;
+            });
+        }
+    });
+});
+</script>
+<style>
+#notificationBell.no-arrow::after {
+    display: none !important;
+}
+#notificationBell:hover {
+    transform: scale(1.1);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+}
+.notification-item:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(157, 78, 221, 0.25) !important;
+}
+</style>
 {% endblock %}
