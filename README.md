@@ -30,6 +30,29 @@ Online Technical Assessment Module
 <img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/608d65d3-296f-45a5-9f49-7dd598dc31cb" />
 Dashboard Alert Center
 <img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/5396dd1f-aaa3-4517-b51b-2dc12c965e55" />
+Recruiter Profile Settings
+<img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/8463c9f3-5f77-4e4c-8045-bf697f90bc9e" />
+Ranked Applicants View
+<img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/f207021d-524d-4b04-a846-c67d4a9648a7" />
+Main Recruiter Dashboard Overview
+<img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/d902a7c1-12b6-40ff-ad80-61f0c4cc8baa" />
+Job Postings Modification Portal
+<img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/fd06a0b4-9bfa-4873-8333-f46597df8e71" />
+AI Skill Alignment Analysis
+<img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/84944770-8245-41c3-83f5-4834ffdde98f" />
+Applicants Directory Funnel
+<img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/167b2a81-020f-435e-99c8-3caf320ba8f4" />
+Data Portability & Export (Spreadsheet Report)
+<img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/6785d243-baf6-4841-9a28-11f6e18249cd" />
+Filtered Shortlist Pipeline
+<img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/23653152-7b61-4a59-8ccb-cd46803da8a1" />
+
+
+
+
+
+
+
 
 
 
