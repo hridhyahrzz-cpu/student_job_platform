@@ -46,6 +46,11 @@ Data Portability & Export (Spreadsheet Report)
 <img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/6785d243-baf6-4841-9a28-11f6e18249cd" />
 Filtered Shortlist Pipeline
 <img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/23653152-7b61-4a59-8ccb-cd46803da8a1" />
+Admin Job Moderation Dashboard (Upper Fold)
+<img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/6dc6ba80-f4b0-4a1f-91b7-ac7b4384c3f8" />
+AI Career Path Predictor Analytics (Lower Fold)
+<img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/cc1ac338-89bc-46a1-be3b-2f2bd49c7d65" />
+
 
 
 
